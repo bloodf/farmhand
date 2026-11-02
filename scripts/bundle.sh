@@ -11,7 +11,7 @@ cp -r apps/web/dist "$out/apps/web/"
 cp -r deploy LICENSE NOTICE README.md "$out/"
 cp -r packages "$out/packages"
 # Production node_modules for the server only (workspace links resolved by pnpm deploy).
-pnpm --filter @farmhand/server deploy --prod "$out/apps/server/deployed" >/dev/null
+pnpm --filter @farmhand/server deploy --legacy --prod "$out/apps/server/deployed" >/dev/null
 mv "$out/apps/server/deployed/node_modules" "$out/apps/server/node_modules"
 rm -rf "$out/apps/server/deployed" "$out/packages"
 tar -C dist -czf "dist/farmhand-${version}.tar.gz" "farmhand-${version}"

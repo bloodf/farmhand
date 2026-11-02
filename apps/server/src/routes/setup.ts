@@ -79,7 +79,7 @@ export const setupRoutes = (deps: Deps) => {
             return c.json({ code: "setup_complete" as const }, 410);
           throw err;
         }
-        await deps.operations.open("user", null, body.email, { event: "setup" });
+        await deps.operations.record("user", null, body.email, { event: "setup" });
         return c.json({ ok: true as const }, 201);
       },
     );

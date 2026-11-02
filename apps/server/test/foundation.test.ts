@@ -88,6 +88,15 @@ describe("operations", () => {
     expect((await h.deps.operations.get(id))?.status).toBe("unknown");
   });
 
+  it("closes the setup audit row so it never shows as running", async () => {
+    const res = (await (await h.admin.get("/api/operations?kind=user")).json()) as {
+      items: { input: Record<string, unknown>; status: string; finishedAt: string | null }[];
+    };
+    const setup = res.items.find((o) => o.input.event === "setup");
+    expect(setup?.status).toBe("complete");
+    expect(setup?.finishedAt).not.toBeNull();
+  });
+
   it("404s on a missing id", async () => {
     expect((await h.admin.get("/api/operations/nope")).status).toBe(404);
   });

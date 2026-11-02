@@ -50,6 +50,18 @@ export class Operations {
     return row.id;
   }
 
+  /** Audit-only entry for something that already happened: opens and closes in one call. */
+  async record(
+    kind: OperationKind,
+    actor: Actor | null,
+    target: string | null,
+    input: Record<string, unknown>,
+  ) {
+    const id = await this.open(kind, actor, target, input);
+    await this.update(id, { status: "complete" });
+    return id;
+  }
+
   async update(id: string, patch: { status?: OperationStatus; steps?: Step[] }) {
     const finished = patch.status && patch.status !== "running" ? new Date().toISOString() : undefined;
     await this.db
