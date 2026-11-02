@@ -13,6 +13,11 @@ export default defineConfig({
       "node:os": fileURLToPath(new URL("./src/lib/node-os-shim.ts", import.meta.url)),
     },
   },
-  server: { port: 5173, proxy: { "/api": { target: "http://127.0.0.1:3490", changeOrigin: false } } },
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": { target: `http://127.0.0.1:${process.env.FARMHAND_API_PORT ?? "3490"}`, changeOrigin: false },
+    },
+  },
   build: { outDir: "dist", sourcemap: true },
 });

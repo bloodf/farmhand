@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FakeHelper } from "../src/adapters/helper.js";
 import { harness } from "./harness.js";
 
-const P = { mr1: 47125, mr2: 47126, printstash: 43460, fdm: 44000, spoolman: 47912 };
+const P = { mr1: 47125, mr2: 47126, printstash: 43460, fdm: 48400, spoolman: 47912 };
 const mr1 = createFakeMoonraker({ name: "gamma", port: P.mr1, state: "standby", tickMs: 0 });
 const mr2 = createFakeMoonraker({ name: "delta", port: P.mr2, state: "standby", tickMs: 0 });
 const apps = createFakeApps({ printstashPort: P.printstash, fdmPort: P.fdm, spoolmanPort: P.spoolman });
