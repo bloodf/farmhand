@@ -7,11 +7,12 @@ import { resetRateLimitsForTests } from "../src/middleware/rate-limit.js";
 export const ORIGIN = "http://localhost:5173";
 const silent = { info() {}, warn() {}, error() {} };
 
-export async function harness(over: Partial<Env> = {}) {
+export async function harness(over: Partial<Env> = {}, opts: { jobs?: boolean } = {}) {
   resetRateLimitsForTests();
   const deps = await createDeps(testEnv({ FARMHAND_PUBLIC_URL: ORIGIN, ...over }), {
     log: silent,
     version: "test",
+    jobs: opts.jobs,
   });
   const { app } = createApp(deps);
 

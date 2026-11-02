@@ -1,10 +1,17 @@
 /** Everything a route can reach. Built once at boot, or per test with an in-memory DB. */
+import { FdmMonster } from "./adapters/fdm-monster.js";
+import { PrintStash } from "./adapters/printstash.js";
+import { Spoolman } from "./adapters/spoolman.js";
 import { type Auth, createAuth } from "./auth.js";
 import { createDb, type Db } from "./db/client.js";
 import type { Env } from "./env.js";
+import { adoptFromPrintStash } from "./jobs/adopt.js";
+import { Fleet } from "./jobs/fleet.js";
+import { Candidates } from "./lib/candidates.js";
 import { ConfirmTokens } from "./lib/confirm-token.js";
 import { Operations } from "./lib/operations.js";
 import { SettingsStore } from "./lib/settings.js";
+import { LiveStore } from "./live/store.js";
 
 export interface Log {
   info(obj: Record<string, unknown>, msg: string): void;
@@ -19,7 +26,13 @@ export interface Deps {
   auth: Auth;
   operations: Operations;
   settings: SettingsStore;
+  candidates: Candidates;
   confirm: ConfirmTokens;
+  live: LiveStore;
+  fleet: Fleet;
+  printstash: PrintStash;
+  fdm: FdmMonster;
+  spoolman: Spoolman;
   log: Log;
 }
 
@@ -32,24 +45,57 @@ export const consoleLog: Log = {
     ),
 };
 
+export interface CreateDepsOptions {
+  version?: string;
+  log?: Log;
+  /** Start background jobs (subscribers, health, stock). Tests usually leave this off. */
+  jobs?: boolean;
+}
+
 export async function createDeps(
   env: Env,
-  opts: { version?: string; log?: Log } = {},
-): Promise<Deps & { close: () => void }> {
+  opts: CreateDepsOptions = {},
+): Promise<Deps & { close: () => Promise<void> }> {
+  const log = opts.log ?? consoleLog;
   const { db, client, migrate } = createDb(env.FARMHAND_DB);
   await migrate();
   const auth = createAuth(db, env);
-  const operations = new Operations(db);
+  const live = new LiveStore();
+  const operations = new Operations(db, (op) =>
+    live.emit({ type: "operation", id: op.id, kind: op.kind, status: op.status, steps: op.steps }),
+  );
   await operations.closeStale();
+  const settings = new SettingsStore(db);
+  const printstash = new PrintStash({
+    url: env.PRINTSTASH_URL,
+    user: env.PRINTSTASH_USER,
+    password: env.PRINTSTASH_PASSWORD,
+  });
+  const fdm = new FdmMonster({ url: env.FDM_URL, user: env.FDM_USER, password: env.FDM_PASSWORD });
+  const spoolman = new Spoolman(env.SPOOLMAN_URL);
+  const fleet = new Fleet({ env, db, live, settings, printstash, fdm, spoolman });
+  if (opts.jobs) {
+    await adoptFromPrintStash(db, printstash, log);
+    await fleet.start();
+  }
   return {
     env,
     version: opts.version ?? "dev",
     db,
     auth,
     operations,
-    settings: new SettingsStore(db),
+    settings,
+    candidates: new Candidates(db),
     confirm: new ConfirmTokens(env.BETTER_AUTH_SECRET),
-    log: opts.log ?? consoleLog,
-    close: () => client.close(),
+    live,
+    fleet,
+    printstash,
+    fdm,
+    spoolman,
+    log,
+    close: async () => {
+      fleet.stop();
+      client.close();
+    },
   };
 }

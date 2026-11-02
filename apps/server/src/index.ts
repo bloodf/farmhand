@@ -8,7 +8,7 @@ const env = loadEnv();
 const version = (
   JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }
 ).version;
-const deps = await createDeps(env, { version });
+const deps = await createDeps(env, { version, jobs: true });
 const { app } = createApp(deps);
 
 const server = serve({ fetch: app.fetch, port: env.FARMHAND_PORT, hostname: env.FARMHAND_HOST }, (info) =>
@@ -17,8 +17,7 @@ const server = serve({ fetch: app.fetch, port: env.FARMHAND_PORT, hostname: env.
 
 const shutdown = () => {
   server.close(() => {
-    deps.close();
-    process.exit(0);
+    void deps.close().then(() => process.exit(0));
   });
 };
 process.on("SIGINT", shutdown);

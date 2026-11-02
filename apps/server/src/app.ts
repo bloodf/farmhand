@@ -8,6 +8,7 @@ import { ZodError } from "zod";
 import type { Deps } from "./deps.js";
 import { sameOrigin } from "./middleware/same-origin.js";
 import { type AppEnv, requireRole, sessionMiddleware } from "./middleware/session.js";
+import { fleetRoutes } from "./routes/fleet.js";
 import { healthRoutes } from "./routes/health.js";
 import { operationsRoutes } from "./routes/operations.js";
 import { settingsRoutes } from "./routes/settings.js";
@@ -31,7 +32,8 @@ export function createApp(deps: Deps) {
     .route("/", healthRoutes(deps))
     .route("/", setupRoutes(deps))
     .route("/", settingsRoutes(deps))
-    .route("/", operationsRoutes(deps));
+    .route("/", operationsRoutes(deps))
+    .route("/", fleetRoutes(deps));
 
   app.route("/api", api);
 
