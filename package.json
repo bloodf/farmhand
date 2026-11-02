@@ -20,7 +20,6 @@
     "e2e": "pnpm --filter @farmhand/web e2e",
     "changeset": "changeset",
     "release": "changeset version",
-    "release:tag": "changeset tag",
     "bundle": "bash scripts/bundle.sh"
   },
   "devDependencies": {

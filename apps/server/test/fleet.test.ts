@@ -2,7 +2,7 @@ import { createFakeApps, createFakeMoonraker, FIXTURE_PASSWORD, FIXTURE_USER } f
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { harness } from "./harness.js";
 
-const P = { mr1: 37125, mr2: 37126, printstash: 33460, fdm: 34000, spoolman: 37912 };
+const P = { mr1: 27125, mr2: 27126, printstash: 23460, fdm: 24000, spoolman: 27912 };
 const mr1 = createFakeMoonraker({
   name: "alpha",
   port: P.mr1,

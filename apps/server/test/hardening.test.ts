@@ -24,25 +24,25 @@ app.get(
 app.get("/ok", (c) => c.json({ a: 1 }));
 let server: ReturnType<typeof serve>;
 beforeAll(() => {
-  server = serve({ fetch: app.fetch, port: 48801, hostname: "127.0.0.1" });
+  server = serve({ fetch: app.fetch, port: 21801, hostname: "127.0.0.1" });
 });
 afterAll(() => new Promise<void>((r) => server.close(() => r())));
 
 describe("outbound body cap", () => {
   it("rejects an oversized declared length before reading", async () => {
-    expect(await fetchJson("http://127.0.0.1:48801/declared", z.unknown())).toMatchObject({
+    expect(await fetchJson("http://127.0.0.1:21801/declared", z.unknown())).toMatchObject({
       ok: false,
       error: "body_too_large",
     });
   });
   it("stops reading a stream past 1 MiB", async () => {
-    expect(await fetchJson("http://127.0.0.1:48801/stream", z.unknown())).toMatchObject({
+    expect(await fetchJson("http://127.0.0.1:21801/stream", z.unknown())).toMatchObject({
       ok: false,
       error: "body_too_large",
     });
   });
   it("still parses normal bodies", async () => {
-    expect(await fetchJson("http://127.0.0.1:48801/ok", z.object({ a: z.number() }))).toMatchObject({
+    expect(await fetchJson("http://127.0.0.1:21801/ok", z.object({ a: z.number() }))).toMatchObject({
       ok: true,
       data: { a: 1 },
     });

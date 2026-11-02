@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FakeHelper } from "../src/adapters/helper.js";
 import { harness } from "./harness.js";
 
-const P = { mr1: 47125, mr2: 47126, printstash: 43460, fdm: 48400, spoolman: 47912 };
+const P = { mr1: 28125, mr2: 28126, printstash: 28460, fdm: 28400, spoolman: 28912 };
 const mr1 = createFakeMoonraker({ name: "gamma", port: P.mr1, state: "standby", tickMs: 0 });
 const mr2 = createFakeMoonraker({ name: "delta", port: P.mr2, state: "standby", tickMs: 0 });
 const apps = createFakeApps({ printstashPort: P.printstash, fdmPort: P.fdm, spoolmanPort: P.spoolman });
@@ -36,7 +36,7 @@ beforeAll(async () => {
         sources: async () => [
           { host: "127.0.0.1", port: P.mr1, source: "mdns" },
           { host: "127.0.0.1", port: P.mr2, source: "neigh" },
-          { host: "127.0.0.1", port: 47199, source: "neigh" },
+          { host: "127.0.0.1", port: 21199, source: "neigh" },
         ],
       },
     },
@@ -80,7 +80,7 @@ describe("discovery", () => {
       code: "rejected",
       reason: "outside_lan",
     });
-    expect(await j(await op.post("/api/discovery/probe", { ip: "127.0.0.1", port: 47199 }))).toMatchObject({
+    expect(await j(await op.post("/api/discovery/probe", { ip: "127.0.0.1", port: 21199 }))).toMatchObject({
       code: "rejected",
       reason: "refused",
     });
@@ -220,7 +220,7 @@ describe("approval", () => {
       code: "rejected",
       reason: "outside_lan",
     });
-    expect(await j(await op.post("/api/approvals/preview", { ip: "127.0.0.1", port: 47199 }))).toMatchObject({
+    expect(await j(await op.post("/api/approvals/preview", { ip: "127.0.0.1", port: 21199 }))).toMatchObject({
       code: "rejected",
       reason: "refused",
     });
