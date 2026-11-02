@@ -1,0 +1,358 @@
+{
+  "app": {
+    "name": "farmhand"
+  },
+  "nav": {
+    "label": "Main",
+    "open": "Open menu",
+    "close": "Close menu",
+    "overview": "Overview",
+    "printers": "Printers",
+    "discover": "Discover",
+    "apps": "Apps",
+    "maintenance": "Maintenance",
+    "settings": "Settings",
+    "operations": "Activity log"
+  },
+  "common": {
+    "loading": "Loading",
+    "retry": "Try again",
+    "retrying": "Trying again…",
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "working": "Working…",
+    "none": "—",
+    "comingSoon": "Coming soon",
+    "checkedAt": "Checked {{time}}",
+    "lastUpdated": "Last updated {{time}}"
+  },
+  "status": {
+    "unavailable": "Unavailable",
+    "stale": "Stale"
+  },
+  "live": {
+    "live": "Live",
+    "reconnecting": "Reconnecting",
+    "offline": "Offline",
+    "aria": "Live updates: {{status}}"
+  },
+  "theme": {
+    "label": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "language": {
+    "label": "Language",
+    "en-US": "English",
+    "pt-BR": "Português (Brasil)"
+  },
+  "user": {
+    "menu": "Account",
+    "signOut": "Sign out"
+  },
+  "roles": {
+    "viewer": "Viewer",
+    "operator": "Operator",
+    "admin": "Admin"
+  },
+  "errors": {
+    "loadFailed": "Could not load this",
+    "network": "The server did not answer. Check that farmhand is running, then try again.",
+    "generic": "The server returned an error ({{status}}).",
+    "unauthenticated": "Your session ended. Sign in again.",
+    "forbidden": "Your role does not allow this.",
+    "banned": "This account is blocked.",
+    "csrf": "The request came from an unexpected origin. Reload the page and try again.",
+    "rate_limited": "Too many attempts. Wait a minute and try again.",
+    "http_429": "Too many attempts. Wait a minute and try again.",
+    "validation": "Some fields are not valid. Check them and try again.",
+    "not_found": "Not found.",
+    "internal": "The server hit an unexpected error. Check the farmhand logs.",
+    "setup_complete": "Setup is already done.",
+    "unknown_iface": "The interface {{iface}} does not exist on this host.",
+    "INVALID_EMAIL_OR_PASSWORD": "Email or password is wrong."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The address may be old or mistyped.",
+    "home": "Go to overview"
+  },
+  "fields": {
+    "name": "Your name",
+    "email": "Email",
+    "password": "Password",
+    "printerName": "Printer name",
+    "ip": "IP address",
+    "port": "Port"
+  },
+  "login": {
+    "title": "Sign in",
+    "description": "Use the account an admin created for you.",
+    "submit": "Sign in",
+    "submitting": "Signing in…"
+  },
+  "setup": {
+    "title": "Create the admin account",
+    "description": "This is the first run. The account you create here manages the farm and adds everyone else.",
+    "passwordHint": "At least {{min}} characters.",
+    "passwordShort": "Use at least {{min}} characters.",
+    "submit": "Create account",
+    "submitting": "Creating…",
+    "alreadyDone": "Setup was already finished. Sign in instead."
+  },
+  "overview": {
+    "title": "Overview",
+    "printersLabel": "Printers",
+    "kpi": {
+      "approved": "Approved",
+      "printing": "Printing",
+      "offline": "Offline",
+      "pending": "Waiting for approval"
+    },
+    "empty": {
+      "title": "No printers yet",
+      "description": "Find printers on your network, or add one by its IP address.",
+      "discover": "Discover printers",
+      "addByIp": "Add by IP"
+    },
+    "apps": "Apps",
+    "stock": {
+      "title": "Filament stock",
+      "unavailable": "Spoolman did not answer, so stock is unknown.",
+      "spools": "Spools",
+      "known": "Known weight",
+      "withoutWeight_one": "{{count}} spool has no weight recorded and is not counted.",
+      "withoutWeight_other": "{{count}} spools have no weight recorded and are not counted.",
+      "low": "Running low",
+      "lowNone": "Nothing below the low-stock threshold.",
+      "left": "{{amount}} left",
+      "byMaterial": "By material",
+      "noMaterial": "No material set",
+      "materialLine": "{{spools}} × · {{amount}}",
+      "materialLineUnknown": "{{spools}} × · weight unknown"
+    }
+  },
+  "printers": {
+    "title": "Printers",
+    "discover": "Discover",
+    "col": {
+      "name": "Printer",
+      "status": "Status",
+      "progress": "Progress",
+      "temps": "Temperatures",
+      "integrations": "Integrations"
+    }
+  },
+  "printer": {
+    "title": "Printer",
+    "noData": "No data",
+    "progress": "Progress",
+    "extruder": "Nozzle",
+    "bed": "Bed",
+    "tempPair": "{{actual}} / {{target}}",
+    "temps": "Temperatures",
+    "integrations": "Integrations",
+    "approvedAt": "Approved {{time}}",
+    "diagnostics": "Run diagnostics",
+    "retryFailed": "Retry failed steps",
+    "live": "Live status",
+    "file": "File",
+    "duration": "Printing for",
+    "message": "Message",
+    "updatedAt": "Last frame"
+  },
+  "printerSource": {
+    "discovery": "Found by discovery",
+    "manual": "Added by IP",
+    "adopted": "Adopted"
+  },
+  "connection": {
+    "connecting": "Connecting",
+    "online": "Online",
+    "offline": "Offline",
+    "klippy_startup": "Klipper starting",
+    "klippy_error": "Klipper error",
+    "klippy_shutdown": "Klipper shut down"
+  },
+  "jobState": {
+    "standby": "Idle",
+    "printing": "Printing",
+    "paused": "Paused",
+    "complete": "Finished",
+    "cancelled": "Cancelled",
+    "error": "Job error"
+  },
+  "steps": {
+    "allowlist": "Firewall allowlist",
+    "printstash": "PrintStash",
+    "fdm": "FDM Monster",
+    "mobileraker": "Mobileraker"
+  },
+  "stepStatus": {
+    "success": "Done",
+    "already_configured": "Already set up",
+    "failed": "Failed",
+    "unknown": "Unknown",
+    "skipped": "Skipped"
+  },
+  "appStatus": {
+    "up": "Up",
+    "down": "Down",
+    "unknown": "Unknown"
+  },
+  "snippets": {
+    "title": "Setup snippets",
+    "spoolman": "moonraker.conf",
+    "spoolmanHelp": "Paste this block into moonraker.conf on the printer, then restart Moonraker so it tracks filament in Spoolman.",
+    "noLanIp": "Set FARMHAND_LAN_IP on the farmhand host to get the Spoolman block for this printer.",
+    "websocket": "Mobileraker address",
+    "mobilerakerHelp": "In the Mobileraker app, add a printer and paste this address.",
+    "moonraker": "Moonraker URL",
+    "haTitle": "Home Assistant",
+    "haStep1": "In Home Assistant, install the Moonraker integration from HACS.",
+    "haStep2": "Add the integration and enter {{url}} as the host.",
+    "haStep3": "Leave the API key empty unless Moonraker requires one."
+  },
+  "discover": {
+    "title": "Discover printers",
+    "now": "Discover now",
+    "lastRun": "Last scan {{time}}",
+    "candidates": "Found on the network",
+    "empty": {
+      "title": "Nothing found yet",
+      "description_one": "Discovery scans the LAN every minute. Check that the printer is on and Moonraker is running, or add it by IP.",
+      "description_other": "Discovery scans the LAN every {{count}} minutes. Check that the printer is on and Moonraker is running, or add it by IP.",
+      "descriptionNoInterval": "Discovery scans the LAN on a schedule. Check that the printer is on and Moonraker is running, or add it by IP."
+    },
+    "lastSeen": "Seen {{time}}",
+    "klippy": "Klipper: {{state}}",
+    "add": {
+      "title": "Add by IP",
+      "ipHint": "IPv4 only, for example 192.168.1.50.",
+      "check": "Check",
+      "valid": "Looks good. Adding printers arrives in the next release.",
+      "submit": "Add printer"
+    }
+  },
+  "validation": {
+    "name": {
+      "length": "Use 1 to 80 characters.",
+      "whitespace": "Remove spaces at the start or end.",
+      "forbidden_chars": "Remove brackets and control characters."
+    },
+    "ip": {
+      "invalid_ipv4": "Enter an IPv4 address such as 192.168.1.50.",
+      "unspecified": "0.x.x.x addresses cannot be printers.",
+      "loopback": "Loopback addresses point at this host, not a printer.",
+      "multicast": "Multicast addresses cannot be printers.",
+      "reserved": "Reserved and broadcast addresses cannot be printers.",
+      "link_local": "Link-local (169.254.x.x) addresses are not allowed. Give the printer a normal LAN address."
+    },
+    "port": "Enter a port from 1 to 65535."
+  },
+  "apps": {
+    "title": "Apps",
+    "description": "The services farmhand works with. Open them to manage jobs, spools and slicing.",
+    "none": "No apps reported.",
+    "open": "Open {{app}}",
+    "notConfigured": "Not configured",
+    "publicUrlHint": "Set {{variable}} on the farmhand host to get a link here."
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "description": "Service restarts, logs and backups.",
+    "services": {
+      "title": "Services",
+      "description": "Restarting the farm services from here arrives in a later release."
+    },
+    "logs": {
+      "title": "Logs",
+      "description": "Reading service logs from here arrives in a later release."
+    },
+    "backup": {
+      "title": "Backup",
+      "description": "Backups of the farm configuration arrive in a later release."
+    }
+  },
+  "operations": {
+    "title": "Activity log",
+    "description": "Every change farmhand made, newest first.",
+    "empty": "Nothing has been changed yet.",
+    "col": {
+      "kind": "Action",
+      "target": "Target",
+      "status": "Result",
+      "started": "Started",
+      "finished": "Finished"
+    }
+  },
+  "operationKind": {
+    "approve": "Approve printer",
+    "repair": "Repair printer",
+    "discover": "Discovery",
+    "restart": "Restart service",
+    "backup": "Backup",
+    "settings": "Settings change",
+    "user": "Account change"
+  },
+  "operationStatus": {
+    "running": "Running",
+    "complete": "Complete",
+    "partial": "Partly done",
+    "failed": "Failed",
+    "unknown": "Unknown"
+  },
+  "settings": {
+    "title": "Settings",
+    "adminOnly": "Only admins can change these.",
+    "prefs": {
+      "title": "This browser",
+      "description": "Saved on this device only."
+    },
+    "farm": {
+      "title": "Farm",
+      "description": "Applies to everyone using this farmhand.",
+      "interval": "Discovery interval (minutes)",
+      "intervalHint": "How often farmhand scans the LAN for printers.",
+      "intervalRange": "Use a whole number from {{min}} to {{max}}.",
+      "grams": "Low-stock threshold (grams)",
+      "gramsHint": "Spools below this weight show up as running low.",
+      "gramsRange": "Use a whole number from {{min}} to {{max}}.",
+      "ifaces": "LAN interfaces",
+      "ifacesHint": "Printers must sit on a network attached to one of these.",
+      "ifacesRequired": "Pick at least one interface.",
+      "ifaceMissing": "Not on this host",
+      "noIfaces": "The host reported no network interfaces.",
+      "confirmTitle": "Save farm settings?",
+      "effectInterval_one": "Discovery runs every minute.",
+      "effectInterval_other": "Discovery runs every {{count}} minutes.",
+      "effectIfaces": "Only printers on {{ifaces}} are accepted.",
+      "effectGrams": "Spools under {{amount}} count as running low.",
+      "saved": "Settings saved."
+    },
+    "integrations": {
+      "title": "Integrations",
+      "description": "What the server is configured to talk to. Secret values are never shown.",
+      "helper": "Root helper",
+      "helperMode": {
+        "socket": "Connected",
+        "fake": "Fake (development)"
+      },
+      "lanIp": "LAN address",
+      "homeAssistant": "Home Assistant",
+      "set": "Set",
+      "notSet": "Not set",
+      "credentials": "Credentials set",
+      "noCredentials": "No credentials",
+      "public": "Public link set",
+      "noPublic": "No public link"
+    }
+  },
+  "copy": {
+    "copy": "Copy",
+    "copied": "Copied",
+    "aria": "Copy {{label}}",
+    "manual": "Copying is blocked on this connection. The text is selected; press Ctrl+C or Cmd+C."
+  }
+}

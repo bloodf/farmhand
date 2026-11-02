@@ -1,0 +1,361 @@
+{
+  "app": {
+    "name": "farmhand"
+  },
+  "nav": {
+    "label": "Principal",
+    "open": "Abrir menu",
+    "close": "Fechar menu",
+    "overview": "Visão geral",
+    "printers": "Impressoras",
+    "discover": "Descobrir",
+    "apps": "Apps",
+    "maintenance": "Manutenção",
+    "settings": "Configurações",
+    "operations": "Histórico"
+  },
+  "common": {
+    "loading": "Carregando",
+    "retry": "Tentar de novo",
+    "retrying": "Tentando de novo…",
+    "cancel": "Cancelar",
+    "save": "Salvar alterações",
+    "working": "Aguarde…",
+    "none": "—",
+    "comingSoon": "Em breve",
+    "checkedAt": "Verificado em {{time}}",
+    "lastUpdated": "Atualizado em {{time}}"
+  },
+  "status": {
+    "unavailable": "Indisponível",
+    "stale": "Desatualizado"
+  },
+  "live": {
+    "live": "Ao vivo",
+    "reconnecting": "Reconectando",
+    "offline": "Sem conexão",
+    "aria": "Atualizações ao vivo: {{status}}"
+  },
+  "theme": {
+    "label": "Tema",
+    "system": "Do sistema",
+    "light": "Claro",
+    "dark": "Escuro"
+  },
+  "language": {
+    "label": "Idioma",
+    "en-US": "English",
+    "pt-BR": "Português (Brasil)"
+  },
+  "user": {
+    "menu": "Conta",
+    "signOut": "Sair"
+  },
+  "roles": {
+    "viewer": "Leitura",
+    "operator": "Operador",
+    "admin": "Administrador"
+  },
+  "errors": {
+    "loadFailed": "Não deu para carregar",
+    "network": "O servidor não respondeu. Confira se o farmhand está rodando e tente de novo.",
+    "generic": "O servidor retornou um erro ({{status}}).",
+    "unauthenticated": "Sua sessão expirou. Entre de novo.",
+    "forbidden": "Seu perfil não tem permissão para isso.",
+    "banned": "Esta conta está bloqueada.",
+    "csrf": "A requisição veio de uma origem inesperada. Recarregue a página e tente de novo.",
+    "rate_limited": "Muitas tentativas. Espere um minuto e tente de novo.",
+    "http_429": "Muitas tentativas. Espere um minuto e tente de novo.",
+    "validation": "Alguns campos estão inválidos. Confira e tente de novo.",
+    "not_found": "Não encontrado.",
+    "internal": "O servidor teve um erro inesperado. Veja os logs do farmhand.",
+    "setup_complete": "A configuração inicial já foi feita.",
+    "unknown_iface": "A interface {{iface}} não existe neste host.",
+    "INVALID_EMAIL_OR_PASSWORD": "E-mail ou senha incorretos."
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "description": "O endereço pode estar desatualizado ou com erro de digitação.",
+    "home": "Ir para a visão geral"
+  },
+  "fields": {
+    "name": "Seu nome",
+    "email": "E-mail",
+    "password": "Senha",
+    "printerName": "Nome da impressora",
+    "ip": "Endereço IP",
+    "port": "Porta"
+  },
+  "login": {
+    "title": "Entrar",
+    "description": "Use a conta que um administrador criou para você.",
+    "submit": "Entrar",
+    "submitting": "Entrando…"
+  },
+  "setup": {
+    "title": "Criar a conta de administrador",
+    "description": "É a primeira execução. A conta criada aqui gerencia a farm e cadastra as outras pessoas.",
+    "passwordHint": "No mínimo {{min}} caracteres.",
+    "passwordShort": "Use no mínimo {{min}} caracteres.",
+    "submit": "Criar conta",
+    "submitting": "Criando…",
+    "alreadyDone": "A configuração inicial já foi concluída. Faça login."
+  },
+  "overview": {
+    "title": "Visão geral",
+    "printersLabel": "Impressoras",
+    "kpi": {
+      "approved": "Aprovadas",
+      "printing": "Imprimindo",
+      "offline": "Offline",
+      "pending": "Aguardando aprovação"
+    },
+    "empty": {
+      "title": "Nenhuma impressora ainda",
+      "description": "Procure impressoras na sua rede ou adicione uma pelo endereço IP.",
+      "discover": "Descobrir impressoras",
+      "addByIp": "Adicionar por IP"
+    },
+    "apps": "Apps",
+    "stock": {
+      "title": "Estoque de filamento",
+      "unavailable": "O Spoolman não respondeu, então o estoque é desconhecido.",
+      "spools": "Carretéis",
+      "known": "Peso conhecido",
+      "withoutWeight_one": "{{count}} carretel está sem peso cadastrado e não entra na conta.",
+      "withoutWeight_many": "{{count}} carretéis estão sem peso cadastrado e não entram na conta.",
+      "withoutWeight_other": "{{count}} carretéis estão sem peso cadastrado e não entram na conta.",
+      "low": "Acabando",
+      "lowNone": "Nenhum carretel abaixo do limite de estoque baixo.",
+      "left": "Restam {{amount}}",
+      "byMaterial": "Por material",
+      "noMaterial": "Sem material definido",
+      "materialLine": "{{spools}} × · {{amount}}",
+      "materialLineUnknown": "{{spools}} × · peso desconhecido"
+    }
+  },
+  "printers": {
+    "title": "Impressoras",
+    "discover": "Descobrir",
+    "col": {
+      "name": "Impressora",
+      "status": "Status",
+      "progress": "Progresso",
+      "temps": "Temperaturas",
+      "integrations": "Integrações"
+    }
+  },
+  "printer": {
+    "title": "Impressora",
+    "noData": "Sem dados",
+    "progress": "Progresso",
+    "extruder": "Bico",
+    "bed": "Mesa",
+    "tempPair": "{{actual}} / {{target}}",
+    "temps": "Temperaturas",
+    "integrations": "Integrações",
+    "approvedAt": "Aprovada em {{time}}",
+    "diagnostics": "Rodar diagnóstico",
+    "retryFailed": "Repetir etapas com falha",
+    "live": "Status ao vivo",
+    "file": "Arquivo",
+    "duration": "Imprimindo há",
+    "message": "Mensagem",
+    "updatedAt": "Último sinal"
+  },
+  "printerSource": {
+    "discovery": "Encontrada na descoberta",
+    "manual": "Adicionada por IP",
+    "adopted": "Adotada"
+  },
+  "connection": {
+    "connecting": "Conectando",
+    "online": "Online",
+    "offline": "Offline",
+    "klippy_startup": "Klipper iniciando",
+    "klippy_error": "Erro no Klipper",
+    "klippy_shutdown": "Klipper desligado"
+  },
+  "jobState": {
+    "standby": "Ociosa",
+    "printing": "Imprimindo",
+    "paused": "Pausada",
+    "complete": "Concluída",
+    "cancelled": "Cancelada",
+    "error": "Erro na impressão"
+  },
+  "steps": {
+    "allowlist": "Liberação no firewall",
+    "printstash": "PrintStash",
+    "fdm": "FDM Monster",
+    "mobileraker": "Mobileraker"
+  },
+  "stepStatus": {
+    "success": "Feito",
+    "already_configured": "Já configurado",
+    "failed": "Falhou",
+    "unknown": "Desconhecido",
+    "skipped": "Pulado"
+  },
+  "appStatus": {
+    "up": "No ar",
+    "down": "Fora do ar",
+    "unknown": "Desconhecido"
+  },
+  "snippets": {
+    "title": "Trechos de configuração",
+    "spoolman": "moonraker.conf",
+    "spoolmanHelp": "Cole este bloco no moonraker.conf da impressora e reinicie o Moonraker para ele registrar o filamento no Spoolman.",
+    "noLanIp": "Defina FARMHAND_LAN_IP no host do farmhand para gerar o bloco do Spoolman desta impressora.",
+    "websocket": "Endereço para o Mobileraker",
+    "mobilerakerHelp": "No app Mobileraker, adicione uma impressora e cole este endereço.",
+    "moonraker": "URL do Moonraker",
+    "haTitle": "Home Assistant",
+    "haStep1": "No Home Assistant, instale a integração Moonraker pelo HACS.",
+    "haStep2": "Adicione a integração e informe {{url}} como host.",
+    "haStep3": "Deixe a chave de API em branco, a menos que o Moonraker exija uma."
+  },
+  "discover": {
+    "title": "Descobrir impressoras",
+    "now": "Procurar agora",
+    "lastRun": "Última busca em {{time}}",
+    "candidates": "Encontradas na rede",
+    "empty": {
+      "title": "Nada encontrado ainda",
+      "description_one": "A descoberta varre a rede local a cada minuto. Confira se a impressora está ligada e o Moonraker rodando, ou adicione pelo IP.",
+      "description_many": "A descoberta varre a rede local a cada {{count}} minutos. Confira se a impressora está ligada e o Moonraker rodando, ou adicione pelo IP.",
+      "description_other": "A descoberta varre a rede local a cada {{count}} minutos. Confira se a impressora está ligada e o Moonraker rodando, ou adicione pelo IP.",
+      "descriptionNoInterval": "A descoberta varre a rede local periodicamente. Confira se a impressora está ligada e o Moonraker rodando, ou adicione pelo IP."
+    },
+    "lastSeen": "Vista em {{time}}",
+    "klippy": "Klipper: {{state}}",
+    "add": {
+      "title": "Adicionar por IP",
+      "ipHint": "Somente IPv4, por exemplo 192.168.1.50.",
+      "check": "Verificar",
+      "valid": "Tudo certo. A adição de impressoras chega na próxima versão.",
+      "submit": "Adicionar impressora"
+    }
+  },
+  "validation": {
+    "name": {
+      "length": "Use de 1 a 80 caracteres.",
+      "whitespace": "Tire os espaços do começo ou do fim.",
+      "forbidden_chars": "Tire colchetes e caracteres de controle."
+    },
+    "ip": {
+      "invalid_ipv4": "Informe um endereço IPv4, como 192.168.1.50.",
+      "unspecified": "Endereços 0.x.x.x não podem ser impressoras.",
+      "loopback": "Endereços de loopback apontam para este host, não para uma impressora.",
+      "multicast": "Endereços multicast não podem ser impressoras.",
+      "reserved": "Endereços reservados e de broadcast não podem ser impressoras.",
+      "link_local": "Endereços link-local (169.254.x.x) não são aceitos. Dê à impressora um endereço normal da rede local."
+    },
+    "port": "Informe uma porta de 1 a 65535."
+  },
+  "apps": {
+    "title": "Apps",
+    "description": "Os serviços com que o farmhand trabalha. Abra cada um para gerenciar impressões, carretéis e fatiamento.",
+    "none": "Nenhum app informado.",
+    "open": "Abrir {{app}}",
+    "notConfigured": "Não configurado",
+    "publicUrlHint": "Defina {{variable}} no host do farmhand para o link aparecer aqui."
+  },
+  "maintenance": {
+    "title": "Manutenção",
+    "description": "Reinício de serviços, logs e backups.",
+    "services": {
+      "title": "Serviços",
+      "description": "Reiniciar os serviços da farm por aqui chega em uma próxima versão."
+    },
+    "logs": {
+      "title": "Logs",
+      "description": "Ler os logs dos serviços por aqui chega em uma próxima versão."
+    },
+    "backup": {
+      "title": "Backup",
+      "description": "Backups da configuração da farm chegam em uma próxima versão."
+    }
+  },
+  "operations": {
+    "title": "Histórico",
+    "description": "Tudo o que o farmhand alterou, do mais recente para o mais antigo.",
+    "empty": "Nada foi alterado ainda.",
+    "col": {
+      "kind": "Ação",
+      "target": "Alvo",
+      "status": "Resultado",
+      "started": "Início",
+      "finished": "Fim"
+    }
+  },
+  "operationKind": {
+    "approve": "Aprovar impressora",
+    "repair": "Reparar impressora",
+    "discover": "Descoberta",
+    "restart": "Reiniciar serviço",
+    "backup": "Backup",
+    "settings": "Mudança de configuração",
+    "user": "Mudança de conta"
+  },
+  "operationStatus": {
+    "running": "Em andamento",
+    "complete": "Concluída",
+    "partial": "Parcial",
+    "failed": "Falhou",
+    "unknown": "Desconhecido"
+  },
+  "settings": {
+    "title": "Configurações",
+    "adminOnly": "Só administradores podem alterar estas opções.",
+    "prefs": {
+      "title": "Este navegador",
+      "description": "Salvo apenas neste dispositivo."
+    },
+    "farm": {
+      "title": "Farm",
+      "description": "Vale para todo mundo que usa este farmhand.",
+      "interval": "Intervalo da descoberta (minutos)",
+      "intervalHint": "De quanto em quanto tempo o farmhand procura impressoras na rede local.",
+      "intervalRange": "Use um número inteiro de {{min}} a {{max}}.",
+      "grams": "Limite de estoque baixo (gramas)",
+      "gramsHint": "Carretéis abaixo deste peso aparecem como acabando.",
+      "gramsRange": "Use um número inteiro de {{min}} a {{max}}.",
+      "ifaces": "Interfaces da rede local",
+      "ifacesHint": "As impressoras precisam estar numa rede ligada a uma destas interfaces.",
+      "ifacesRequired": "Escolha pelo menos uma interface.",
+      "ifaceMissing": "Não existe neste host",
+      "noIfaces": "O host não informou nenhuma interface de rede.",
+      "confirmTitle": "Salvar as configurações da farm?",
+      "effectInterval_one": "A descoberta roda a cada minuto.",
+      "effectInterval_many": "A descoberta roda a cada {{count}} minutos.",
+      "effectInterval_other": "A descoberta roda a cada {{count}} minutos.",
+      "effectIfaces": "Só impressoras em {{ifaces}} são aceitas.",
+      "effectGrams": "Carretéis com menos de {{amount}} contam como acabando.",
+      "saved": "Configurações salvas."
+    },
+    "integrations": {
+      "title": "Integrações",
+      "description": "Com o que o servidor está configurado para conversar. Valores secretos nunca aparecem.",
+      "helper": "Helper root",
+      "helperMode": {
+        "socket": "Conectado",
+        "fake": "Simulado (desenvolvimento)"
+      },
+      "lanIp": "Endereço na rede local",
+      "homeAssistant": "Home Assistant",
+      "set": "Definido",
+      "notSet": "Não definido",
+      "credentials": "Credenciais definidas",
+      "noCredentials": "Sem credenciais",
+      "public": "Link público definido",
+      "noPublic": "Sem link público"
+    }
+  },
+  "copy": {
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "aria": "Copiar {{label}}",
+    "manual": "Esta conexão bloqueia a cópia. O texto está selecionado; pressione Ctrl+C ou Cmd+C."
+  }
+}
