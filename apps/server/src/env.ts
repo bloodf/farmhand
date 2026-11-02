@@ -1,0 +1,59 @@
+/** Single source of configuration. Parsed once at boot; anything missing fails fast. */
+import { z } from "zod";
+
+const url = z.string().url();
+
+const EnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  FARMHAND_PORT: z.coerce.number().int().min(1).max(65535).default(3490),
+  FARMHAND_HOST: z.string().default("127.0.0.1"),
+  /** Origin the browser uses. Drives CSRF and cookie flags. */
+  FARMHAND_PUBLIC_URL: url.default("http://localhost:5173"),
+  FARMHAND_DB: z.string().default("./farmhand.db"),
+  /** 32+ random bytes. `openssl rand -base64 48`. */
+  BETTER_AUTH_SECRET: z.string().min(32),
+  /** Development only: lets fixtures on 127.0.0.0/8 count as printers. */
+  FARMHAND_DEV_ALLOW_LOOPBACK: z.coerce.boolean().default(false),
+  /** Path to the web build to serve in production; empty = API only. */
+  FARMHAND_WEB_DIST: z.string().default(""),
+  /** Address on the printers' LAN that Spoolman is reachable on (used in snippets). */
+  FARMHAND_LAN_IP: z.string().default(""),
+  FARMHAND_LAN_IFACES: z.string().default("br0"),
+  /** Unix socket of farmhand-helper, or "fake" for development. */
+  FARMHAND_HELPER: z.string().default("fake"),
+  FARMHAND_FAKE_HELPER_DIR: z.string().default(""),
+
+  PRINTSTASH_URL: url.default("http://127.0.0.1:3460"),
+  PRINTSTASH_USER: z.string().default(""),
+  PRINTSTASH_PASSWORD: z.string().default(""),
+  PRINTSTASH_PUBLIC_URL: z.string().default(""),
+  FDM_URL: url.default("http://127.0.0.1:4000"),
+  FDM_USER: z.string().default(""),
+  FDM_PASSWORD: z.string().default(""),
+  FDM_PUBLIC_URL: z.string().default(""),
+  SPOOLMAN_URL: url.default("http://127.0.0.1:7912"),
+  SPOOLMAN_PUBLIC_URL: z.string().default(""),
+  ORCASLICER_URL: url.default("http://127.0.0.1:3470"),
+  ORCASLICER_PUBLIC_URL: z.string().default(""),
+  HA_URL: z.string().default(""),
+  HA_DISCOVERY_WEBHOOK: z.string().default(""),
+});
+
+export type Env = z.infer<typeof EnvSchema>;
+
+export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
+  const env = EnvSchema.parse(source);
+  if (env.NODE_ENV === "production" && env.FARMHAND_DEV_ALLOW_LOOPBACK) {
+    throw new Error("FARMHAND_DEV_ALLOW_LOOPBACK is not allowed in production");
+  }
+  return env;
+}
+
+export const testEnv = (over: Partial<Env> = {}): Env =>
+  loadEnv({
+    NODE_ENV: "test",
+    BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0000",
+    FARMHAND_DB: ":memory:",
+    FARMHAND_DEV_ALLOW_LOOPBACK: "1",
+    ...Object.fromEntries(Object.entries(over).map(([k, v]) => [k, String(v)])),
+  });
