@@ -34,4 +34,4 @@ python3 -I -m unittest discover -s deploy/helper -p 'test_*.py'
 
 ## Releasing
 
-Add a changeset (`pnpm changeset`) with any user-visible change. The release workflow opens a version PR; merging it tags the release and publishes a tarball with `apps/server/dist`, `apps/web/dist` and `deploy/`.
+Add a changeset (`pnpm changeset`) with any user-visible change. The release workflow opens a version PR; merging it tags the release and attaches a tarball with `apps/server/dist`, `apps/web/dist` and `deploy/`.

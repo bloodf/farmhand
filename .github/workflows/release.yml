@@ -27,11 +27,21 @@ jobs:
           commit: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # The version PR is merged: tag it once. The tag triggers the tarball workflow, which creates the GitHub release.
+      # The version PR is merged: tag once, then build the tarball and publish the GitHub release here.
+      # A tag pushed with GITHUB_TOKEN never triggers another workflow, so this job does both.
       - name: Tag release
+        id: tag
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
           v="v$(node -p "require('./apps/server/package.json').version")"
           git fetch --tags --quiet
-          if git rev-parse -q --verify "refs/tags/$v" >/dev/null; then echo "$v already tagged"; exit 0; fi
-          git tag "$v" && git push origin "$v"
+          git rev-parse -q --verify "refs/tags/$v" >/dev/null || { git tag "$v" && git push origin "$v"; }
+          if gh release view "$v" >/dev/null 2>&1; then echo "$v already released"; else echo "tag=$v" >>"$GITHUB_OUTPUT"; fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: steps.tag.outputs.tag != ''
+        run: pnpm bundle
+      - if: steps.tag.outputs.tag != ''
+        run: gh release create "${{ steps.tag.outputs.tag }}" dist/farmhand-*.tar.gz --title "${{ steps.tag.outputs.tag }}" --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
