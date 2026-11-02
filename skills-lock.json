@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "no-ai-slop": {
+      "source": "petergyang/no-ai-slop",
+      "sourceType": "github",
+      "skillPath": "skills/no-ai-slop/SKILL.md",
+      "computedHash": "77d287e3c8e09874e144ee35f6fb0ee1adcf609012c7c3273e9c8fe2054ce5af"
+    },
+    "visant-copy": {
+      "source": "pedrojaques99/visant-skills-public",
+      "sourceType": "github",
+      "skillPath": "visant-copy/SKILL.md",
+      "computedHash": "3061fbd7bf3d4fc35bd57f389909f3e80614a98f001f416e854e31c0e19b1598"
+    },
+    "visant-design": {
+      "source": "pedrojaques99/visant-skills-public",
+      "sourceType": "github",
+      "skillPath": "visant-design/SKILL.md",
+      "computedHash": "4ccd3b89227a8befb9ec7ffba284d6027b3f3b7ee9355c81eccdf47db2542a29"
+    },
+    "visant-frontend": {
+      "source": "pedrojaques99/visant-skills-public",
+      "sourceType": "github",
+      "skillPath": "visant-frontend/SKILL.md",
+      "computedHash": "2947ef6d098b21184114ad5b62d8471ad6e633141f2a1976b2ed9e8e040110d2"
+    },
+    "visant-killer": {
+      "source": "pedrojaques99/visant-skills-public",
+      "sourceType": "github",
+      "skillPath": "visant-killer/SKILL.md",
+      "computedHash": "3a02017cc144b152fb114b8ed027788288d2fd6b4f1d5bc442fb11c605310ed8"
+    },
+    "visant-motion": {
+      "source": "pedrojaques99/visant-skills-public",
+      "sourceType": "github",
+      "skillPath": "visant-motion/SKILL.md",
+      "computedHash": "d5314587ad2c1da4b530c1798392e8d97063b99e7febe654b8d611ffa096c7bb"
+    },
+    "visant-preflight": {
+      "source": "pedrojaques99/visant-skills-public",
+      "sourceType": "github",
+      "skillPath": "visant-preflight/SKILL.md",
+      "computedHash": "eb4f50009613e565d6b127aa18d7bb0b574713f63cfa83da173bc355dcbc8158"
+    },
+    "visant-refine": {
+      "source": "pedrojaques99/visant-skills-public",
+      "sourceType": "github",
+      "skillPath": "visant-refine/SKILL.md",
+      "computedHash": "b82eb5db01b4b7c1590a8d118664a694a7efc2755e2d37cda0b5d559f5cedf97"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes: { label: farmhand version }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes:
+      {
+        label: What happened,
+        description: Steps,
+        expected result,
+        actual result. Paste sanitized logs from Maintenance > Logs if relevant.,
+      }
+    validations: { required: true }
+  - type: input
+    id: stack
+    attributes:
+      {
+        label: Printer firmware and stack versions,
+        placeholder: "Klipper 0.13, Moonraker 0.9, PrintStash 0.15.1, FDM Monster 2.1.1",
+      }

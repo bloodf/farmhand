@@ -1,0 +1,7 @@
+farmhand bundles the following Claude Code skills under .claude/skills/, unchanged:
+
+- no-ai-slop — Copyright Peter Yang — MIT — https://github.com/petergyang/no-ai-slop
+- unslop — Copyright Damir Sokolovsky — CC BY 4.0 — https://github.com/heydamir/unslop
+- visant-* — Copyright Visant — MIT — https://github.com/pedrojaques99/visant-skills-public
+
+Each directory keeps its own LICENSE file.

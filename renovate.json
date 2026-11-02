@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":pinAllExceptPeerDependencies"],
+  "schedule": ["before 6am on monday"],
+  "packageRules": [
+    { "groupName": "hono", "matchPackageNames": ["/^hono$/", "/^@hono\\//"] },
+    { "groupName": "tanstack", "matchPackageNames": ["/^@tanstack\\//"] },
+    { "groupName": "drizzle", "matchPackageNames": ["/^drizzle-/", "@libsql/client"] }
+  ],
+  "docker": { "pinDigests": true }
+}

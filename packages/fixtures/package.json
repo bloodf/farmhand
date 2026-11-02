@@ -1,0 +1,25 @@
+{
+  "name": "@farmhand/fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/farm.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "echo skip"
+  },
+  "dependencies": {
+    "@farmhand/contracts": "workspace:*",
+    "@hono/node-server": "2.1.6",
+    "hono": "4.13.16"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

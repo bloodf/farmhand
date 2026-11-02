@@ -1,0 +1,29 @@
+{
+  "name": "farmhand",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Self-hosted control room for a Klipper/Moonraker 3D print farm",
+  "license": "MIT",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22.4"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter ./apps/* dev",
+    "dev:fake": "pnpm --filter @farmhand/fixtures start",
+    "build": "pnpm -r build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "e2e": "pnpm --filter @farmhand/web e2e",
+    "changeset": "changeset",
+    "release": "changeset version"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@changesets/cli": "3.0.3",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

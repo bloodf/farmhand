@@ -1,0 +1,31 @@
+{
+  "name": "@farmhand/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@farmhand/contracts": "workspace:*",
+    "@hono/node-server": "2.1.6",
+    "@hono/zod-openapi": "1.6.3",
+    "@libsql/client": "0.18.0",
+    "@scalar/hono-api-reference": "0.12.17",
+    "better-auth": "1.7.15",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.16",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@farmhand/fixtures": "workspace:*",
+    "@types/node": "26.6.6",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

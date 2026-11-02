@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.output/
+*.log
+.env
+*.local
+.DS_Store
+coverage/
+test-results/
+playwright-report/
+apps/web/src/routeTree.gen.ts
+*.db
+*.db-*
