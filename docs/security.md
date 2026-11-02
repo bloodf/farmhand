@@ -31,3 +31,9 @@ Every upstream call has a 3 s timeout (longer for registrations), never follows 
 ## Reporting
 
 Use GitHub Security Advisories on the repository. Do not open a public issue for a vulnerability.
+
+## Known limits
+
+- Confirm-token nonces are kept in memory. A server restart inside the 120 s token lifetime would let one token be redeemed again. Every approval step is idempotent, so a replay repeats a no-op; it is still listed here so nobody relies on the nonce for anything else.
+- The rate limiter is per process. farmhand runs as one process, so that is the whole picture.
+- The reverse proxy must overwrite the header named in `FARMHAND_TRUSTED_IP_HEADER` (default `X-Real-IP`). Without a proxy, set it to a header nobody sends and accept that per-IP limits key on one bucket.
