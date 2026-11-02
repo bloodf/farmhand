@@ -22,6 +22,8 @@ jobs:
       - uses: changesets/action@v1
         with:
           version: pnpm release
+          publish: pnpm release:tag
+          createGithubReleases: true
           title: "chore: version packages"
           commit: "chore: version packages"
         env:

@@ -19,7 +19,9 @@
     "test": "vitest run",
     "e2e": "pnpm --filter @farmhand/web e2e",
     "changeset": "changeset",
-    "release": "changeset version"
+    "release": "changeset version",
+    "release:tag": "changeset tag",
+    "bundle": "bash scripts/bundle.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
