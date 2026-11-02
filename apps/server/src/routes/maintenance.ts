@@ -2,6 +2,7 @@
 import { ConfirmSchema, LOG_SOURCES, SERVICE_IDS, SERVICE_LABELS } from "@farmhand/contracts";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Deps } from "../deps.js";
+import { clientIp } from "../lib/client-ip.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { type AppEnv, requireRole } from "../middleware/session.js";
 
@@ -35,7 +36,7 @@ export const maintenanceRoutes = (deps: Deps) => {
     req: { header: (n: string) => string | undefined };
   }) => ({
     id: c.get("session")?.user.id ?? "",
-    ip: c.req.header("x-forwarded-for") ?? null,
+    ip: clientIp((n) => c.req.header(n), deps.env.FARMHAND_TRUSTED_IP_HEADER),
   });
 
   return new OpenAPIHono<AppEnv>()

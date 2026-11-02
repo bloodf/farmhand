@@ -3,6 +3,7 @@ import {
   ApprovalPreviewSchema,
   ConfirmTokenSchema,
   checkTarget,
+  nameProblem,
   STEP_IDS,
   StepSchema,
   TargetSchema,
@@ -12,6 +13,7 @@ import { and, eq } from "drizzle-orm";
 import { moonrakerHttp, probeMoonraker } from "../adapters/moonraker.js";
 import { candidates, printers } from "../db/schema.js";
 import type { Deps } from "../deps.js";
+import { clientIp } from "../lib/client-ip.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { type AppEnv, requireRole } from "../middleware/session.js";
 
@@ -50,7 +52,10 @@ export const onboardingRoutes = (deps: Deps) => {
     req: { header: (n: string) => string | undefined };
   }) => {
     const s = c.get("session");
-    return { id: s?.user.id ?? "", ip: c.req.header("x-forwarded-for") ?? null };
+    return {
+      id: s?.user.id ?? "",
+      ip: clientIp((n) => c.req.header(n), deps.env.FARMHAND_TRUSTED_IP_HEADER),
+    };
   };
   const lanCheck = async (ip: string) =>
     checkTarget(ip, {
@@ -185,7 +190,9 @@ export const onboardingRoutes = (deps: Deps) => {
         if (!t.ok) return c.json({ code: "rejected" as const, reason: t.code }, 422);
         const p = await deps.approval.preview(body.ip, body.port);
         if (!p.ok) return c.json({ code: "rejected" as const, reason: p.error }, 422);
-        const name = body.name ?? p.identity.hostname ?? body.ip;
+        // A hostname comes from the device itself; it only becomes the name when it passes the same rules as typed input.
+        const hostname = p.identity.hostname?.trim().slice(0, 80);
+        const name = body.name ?? (hostname && nameProblem(hostname) === null ? hostname : body.ip);
         const input = { host: body.ip, port: body.port, name };
         const { token, expiresAt } = deps.confirm.mint("approve", input, actor(c).id);
         return c.json(

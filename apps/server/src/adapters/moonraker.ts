@@ -59,6 +59,8 @@ type Status = Record<string, Record<string, unknown>>;
 export const STALE_AFTER_MS = 30_000;
 const BACKOFF_MIN = 1000;
 const BACKOFF_MAX = 30_000;
+const MAX_FRAME_CHARS = 256_000;
+const MAX_TEXT = 512;
 
 export const emptyLive = (id: string): PrinterLive => ({
   id,
@@ -83,7 +85,7 @@ export function applyStatus(prev: PrinterLive, status: Status): PrinterLive {
   const bed = status.heater_bed;
   const hooks = status.webhooks ?? {};
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
-  const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+  const str = (v: unknown) => (typeof v === "string" ? v.slice(0, MAX_TEXT) : undefined);
   const temp = (o: Record<string, unknown> | undefined, cur?: { actual: number; target: number }) => {
     if (!o) return cur;
     const actual = num(o.temperature) ?? cur?.actual;
@@ -168,9 +170,11 @@ export function subscribe(
       armStale();
     };
     ws.onmessage = (e) => {
+      const raw = String(e.data);
+      if (raw.length > MAX_FRAME_CHARS) return; // a printer never sends frames this big; a rogue device might
       let msg: { method?: string; params?: unknown[]; result?: { status?: Status } };
       try {
-        msg = JSON.parse(String(e.data));
+        msg = JSON.parse(raw);
       } catch {
         return;
       }

@@ -33,7 +33,11 @@ export function createAuth(db: Db, env: Env) {
     emailAndPassword: { enabled: true, minPasswordLength: 12, autoSignIn: true },
     user: { additionalFields: { locale: { type: "string", defaultValue: "en-US", input: true } } },
     session: { cookieCache: { enabled: true, maxAge: 60 } },
-    advanced: { useSecureCookies: env.FARMHAND_PUBLIC_URL.startsWith("https://") },
+    advanced: {
+      useSecureCookies: env.FARMHAND_PUBLIC_URL.startsWith("https://"),
+      // Only a header the reverse proxy overwrites may identify the client; X-Forwarded-For can be forged.
+      ipAddress: { ipAddressHeaders: [env.FARMHAND_TRUSTED_IP_HEADER] },
+    },
     rateLimit: {
       enabled: true,
       window: 60,

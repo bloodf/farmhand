@@ -14,6 +14,8 @@ const EnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   /** Development only: lets fixtures on 127.0.0.0/8 count as printers. */
   FARMHAND_DEV_ALLOW_LOOPBACK: z.coerce.boolean().default(false),
+  /** Header the reverse proxy sets with the real client address (it must overwrite it). */
+  FARMHAND_TRUSTED_IP_HEADER: z.string().default("x-real-ip"),
   /** Path to the web build to serve in production; empty = API only. */
   FARMHAND_WEB_DIST: z.string().default(""),
   /** Address on the printers' LAN that Spoolman is reachable on (used in snippets). */

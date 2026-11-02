@@ -2,6 +2,7 @@ import { networkInterfaces } from "node:os";
 import { SettingsPatchSchema } from "@farmhand/contracts";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Deps } from "../deps.js";
+import { clientIp } from "../lib/client-ip.js";
 import { type AppEnv, requireRole } from "../middleware/session.js";
 
 const SettingsOut = z.object({
@@ -62,7 +63,9 @@ export const settingsRoutes = (deps: Deps) =>
         const bad = patch.lanIfaces?.find((i) => !known.includes(i));
         if (bad) return c.json({ code: "unknown_iface" as const, iface: bad }, 422);
         const s = c.get("session");
-        const actor = s ? { id: s.user.id, ip: c.req.header("x-forwarded-for") ?? null } : null;
+        const actor = s
+          ? { id: s.user.id, ip: clientIp((n) => c.req.header(n), deps.env.FARMHAND_TRUSTED_IP_HEADER) }
+          : null;
         const opId = await deps.operations.open("settings", actor, null, patch);
         const next = await deps.settings.write(patch, s?.user.id ?? null);
         await deps.operations.update(opId, { status: "complete" });

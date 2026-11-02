@@ -7,6 +7,7 @@ export type AppEnv = {
   Variables: {
     session: Session | null;
     requestId: string;
+    trustedIpHeader: string;
   };
 };
 

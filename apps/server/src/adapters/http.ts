@@ -23,14 +23,37 @@ export async function fetchJson<T>(
       headers: { accept: "application/json", ...(init.headers ?? {}) },
     });
     if (!res.ok) return { ok: false, error: `http_${res.status}`, latencyMs: latency() };
-    const text = await res.text();
-    if (text.length > MAX_BODY) return { ok: false, error: "body_too_large", latencyMs: latency() };
+    const text = await readCapped(res, MAX_BODY);
+    if (text === null) return { ok: false, error: "body_too_large", latencyMs: latency() };
     const parsed = schema.safeParse(JSON.parse(text));
     if (!parsed.success) return { ok: false, error: "unexpected_response", latencyMs: latency() };
     return { ok: true, data: parsed.data, latencyMs: latency() };
   } catch (err) {
     return { ok: false, error: classify(err), latencyMs: latency() };
   }
+}
+
+/** Reads at most `max` bytes; returns null (and cancels the stream) when the body is bigger. */
+async function readCapped(res: Response, max: number): Promise<string | null> {
+  const declared = Number(res.headers.get("content-length") ?? 0);
+  if (declared > max || !res.body) {
+    await res.body?.cancel();
+    return declared > max ? null : "";
+  }
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let n = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    n += value.byteLength;
+    if (n > max) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 export function classify(err: unknown): string {

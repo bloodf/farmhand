@@ -24,6 +24,10 @@ export function createApp(deps: Deps) {
   });
 
   app.use("*", requestId());
+  app.use("*", async (c, next) => {
+    c.set("trustedIpHeader", deps.env.FARMHAND_TRUSTED_IP_HEADER);
+    await next();
+  });
   app.use("*", secureHeaders({ referrerPolicy: "same-origin" }));
   app.use("/api/*", sameOrigin(deps.env.FARMHAND_PUBLIC_URL));
   app.use("/api/*", sessionMiddleware(deps.auth));
