@@ -27,7 +27,8 @@ export const LIVE_KEY = ["live"] as const;
 export const useLive = () =>
   useQuery<LiveState>({ queryKey: LIVE_KEY, queryFn: () => Promise.reject(), enabled: false });
 
-const EVENT_TYPES = ["snapshot", "printer", "app", "candidates", "discovery", "operation"] as const;
+// The server sends every frame as `event: farm`; the rest are kept for older servers.
+const EVENT_TYPES = ["farm", "snapshot", "printer", "app", "candidates", "discovery", "operation"] as const;
 const MAX_BACKOFF_MS = 30_000;
 const OFFLINE_AFTER_FAILURES = 3;
 

@@ -22,9 +22,9 @@
     "save": "Save changes",
     "working": "Working…",
     "none": "—",
-    "comingSoon": "Coming soon",
     "checkedAt": "Checked {{time}}",
-    "lastUpdated": "Last updated {{time}}"
+    "lastUpdated": "Last updated {{time}}",
+    "close": "Close"
   },
   "status": {
     "unavailable": "Unavailable",
@@ -71,7 +71,15 @@
     "internal": "The server hit an unexpected error. Check the farmhand logs.",
     "setup_complete": "Setup is already done.",
     "unknown_iface": "The interface {{iface}} does not exist on this host.",
-    "INVALID_EMAIL_OR_PASSWORD": "Email or password is wrong."
+    "INVALID_EMAIL_OR_PASSWORD": "Email or password is wrong.",
+    "busy": "Another farm operation is running. Wait for it to finish, then try again.",
+    "bad_token": "The check expired. Check the printer again before approving.",
+    "rejected": "The server refused this printer address.",
+    "waiting": "The Mobileraker companion only starts after a printer is approved. Approve a printer first.",
+    "unavailable": "The root helper did not answer. Check that farmhand-helper is running on the host.",
+    "failed": "The host refused the action. Check the farmhand logs.",
+    "invalid": "The host rejected the request as invalid.",
+    "timeout": "The host did not answer in time. Check the result before trying again."
   },
   "notFound": {
     "title": "Page not found",
@@ -84,7 +92,8 @@
     "password": "Password",
     "printerName": "Printer name",
     "ip": "IP address",
-    "port": "Port"
+    "port": "Port",
+    "printerNameOptional": "Printer name (optional)"
   },
   "login": {
     "title": "Sign in",
@@ -160,7 +169,17 @@
     "file": "File",
     "duration": "Printing for",
     "message": "Message",
-    "updatedAt": "Last frame"
+    "updatedAt": "Last frame",
+    "diagnosing": "Checking…",
+    "repairResult": "Last retry",
+    "repairTitle": "Retry failed steps on {{name}}?",
+    "repairEffect": "Runs again: {{steps}}.",
+    "repairKeep": "Steps that already worked are left alone.",
+    "diag": {
+      "title": "Diagnostics",
+      "reachable": "Moonraker reachable",
+      "unreachable": "Moonraker unreachable"
+    }
   },
   "printerSource": {
     "discovery": "Found by discovery",
@@ -226,14 +245,24 @@
       "descriptionNoInterval": "Discovery scans the LAN on a schedule. Check that the printer is on and Moonraker is running, or add it by IP."
     },
     "lastSeen": "Seen {{time}}",
-    "klippy": "Klipper: {{state}}",
     "add": {
       "title": "Add by IP",
       "ipHint": "IPv4 only, for example 192.168.1.50.",
-      "check": "Check",
-      "valid": "Looks good. Adding printers arrives in the next release.",
-      "submit": "Add printer"
-    }
+      "check": "Check printer",
+      "checking": "Checking…",
+      "found": "Moonraker answered.",
+      "nameHint": "Leave empty to use the printer's hostname."
+    },
+    "searching": "Searching…",
+    "busy": "A scan is already running.",
+    "lastError": "Last scan failed: {{error}}",
+    "unnamed": "Unnamed printer",
+    "moonraker": "Moonraker {{version}}",
+    "approve": "Approve",
+    "dismiss": "Dismiss",
+    "dismissTitle": "Dismiss {{name}}?",
+    "dismissEffect": "It leaves this list and is not offered again.",
+    "dismissUndo": "Nothing on the printer changes. You can still add it by IP."
   },
   "validation": {
     "name": {
@@ -263,16 +292,40 @@
     "title": "Maintenance",
     "description": "Service restarts, logs and backups.",
     "services": {
-      "title": "Services",
-      "description": "Restarting the farm services from here arrives in a later release."
+      "title": "Services"
     },
     "logs": {
-      "title": "Logs",
-      "description": "Reading service logs from here arrives in a later release."
+      "title": "Logs: {{source}}",
+      "open": "Logs",
+      "refresh": "Refresh",
+      "hint": "The last 100 lines, with secrets removed.",
+      "fetched": "Fetched {{time}}",
+      "lines_one": "{{count}} line",
+      "lines_other": "{{count}} lines",
+      "empty": "No log lines."
     },
     "backup": {
       "title": "Backup",
-      "description": "Backups of the farm configuration arrive in a later release."
+      "state": "State",
+      "result": "Last result",
+      "startedAt": "Started",
+      "finishedAt": "Finished",
+      "run": "Run backup",
+      "running": "Backup running…",
+      "started": "Backup started.",
+      "confirmTitle": "Run the host backup now?",
+      "effect": "This starts the host backup unit and can take a while.",
+      "limit": "You can start one backup every 10 minutes."
+    },
+    "fakeHelper": "Development helper: nothing touches the host.",
+    "guard": "Firewall guard",
+    "restart": {
+      "button": "Restart",
+      "title": "Restart {{service}}?",
+      "effect": "Managing printers through this app pauses for up to a minute.",
+      "prints": "Prints are not interrupted.",
+      "ready": "{{service}} is back: {{state}}.",
+      "notReady": "{{service}} did not report healthy within a minute. State: {{state}}."
     }
   },
   "operations": {
@@ -285,7 +338,9 @@
       "status": "Result",
       "started": "Started",
       "finished": "Finished"
-    }
+    },
+    "noSteps": "No steps recorded.",
+    "input": "Input"
   },
   "operationKind": {
     "approve": "Approve printer",
@@ -354,5 +409,106 @@
     "copied": "Copied",
     "aria": "Copy {{label}}",
     "manual": "Copying is blocked on this connection. The text is selected; press Ctrl+C or Cmd+C."
+  },
+  "reasons": {
+    "invalid_ipv4": "That is not an IPv4 address.",
+    "unspecified": "0.x.x.x addresses cannot be printers.",
+    "loopback": "Loopback addresses point at this host, not a printer.",
+    "multicast": "Multicast addresses cannot be printers.",
+    "reserved": "Reserved addresses cannot be printers.",
+    "link_local": "Link-local (169.254.x.x) addresses are not allowed. Give the printer a normal LAN address.",
+    "own_address": "That is the address of this host, not a printer.",
+    "outside_lan": "That address is outside the LAN interfaces set in Settings.",
+    "network_or_broadcast": "That is the network or broadcast address of the LAN, not a printer.",
+    "refused": "The printer refused the connection. Check that Moonraker is running and the port is right.",
+    "timeout": "The printer did not answer in time. Check that it is on and on the network.",
+    "unreachable": "No route to that address. Check the IP and that the printer is on the same network.",
+    "dns": "The name could not be resolved.",
+    "network": "A network error stopped the check. Try again.",
+    "http": "Something answered on that port, but not Moonraker (HTTP {{status}}).",
+    "not_json": "Something answered on that port, but not Moonraker.",
+    "unexpected_response": "Moonraker answered with something farmhand does not understand.",
+    "record_failed": "The printer answered, but farmhand could not save it. Try again.",
+    "other": "The printer could not be checked ({{reason}})."
+  },
+  "klippy": {
+    "none": "Klipper: unknown",
+    "ready": "Klipper ready",
+    "startup": "Klipper starting",
+    "shutdown": "Klipper shut down",
+    "error": "Klipper error",
+    "disconnected": "Klipper disconnected",
+    "other": "Klipper: {{state}}"
+  },
+  "candidateSource": {
+    "mdns": "Found by mDNS",
+    "neigh": "Found on the LAN",
+    "manual": "Added by IP"
+  },
+  "approve": {
+    "title": "Approve printer",
+    "checkHint": "Check what approving changes, then confirm.",
+    "renameHint": "Check again to use the new name.",
+    "address": "Address",
+    "moonraker": "Moonraker",
+    "klipper": "Klipper",
+    "effectsTitle": "What approving does",
+    "effect": {
+      "allowlist": "Lets this printer reach Spoolman on the LAN.",
+      "printstash": "Registers it in the PrintStash print queue.",
+      "fdm": "Adds it to the FDM Monster fleet grid. FDM Monster contacts the printer, so it must be on.",
+      "mobileraker": "Sends phone notifications. The companion restarts for a few seconds."
+    },
+    "willDo": {
+      "add": "Will add",
+      "already": "Already set up",
+      "unknown": "Cannot check: {{detail}}"
+    },
+    "recheck": "Check again",
+    "submit": "Approve and set up",
+    "expired": "The check expired, so farmhand checked the printer again. Review it and confirm.",
+    "applyTitle": "Setting up the printer",
+    "applyHint": "Keep this window open.",
+    "applying": "Running each step. This can take up to a minute.",
+    "doneTitle": "Printer approved",
+    "doneHint": "Every step finished.",
+    "partialTitle": "Approved, with problems",
+    "failedSteps": "These steps did not finish: {{steps}}.",
+    "openPrinter": "Open printer",
+    "next": {
+      "title": "Next steps",
+      "spoolman": "Paste the Spoolman block into moonraker.conf (on the printer page).",
+      "mobileraker": "Add the printer in the Mobileraker app with the address on the printer page.",
+      "ha": "Optional: connect Home Assistant with the steps on the printer page."
+    }
+  },
+  "serviceState": {
+    "running": "Running",
+    "exited": "Stopped",
+    "missing": "Missing",
+    "unknown": "Unknown"
+  },
+  "serviceHealth": {
+    "healthy": "Healthy",
+    "unhealthy": "Unhealthy",
+    "starting": "Starting",
+    "none": "No health check"
+  },
+  "unitState": {
+    "active": "Active",
+    "activating": "Starting",
+    "deactivating": "Stopping",
+    "inactive": "Idle",
+    "failed": "Failed"
+  },
+  "unitResult": {
+    "success": "Success",
+    "exit-code": "Failed (exit code)",
+    "signal": "Killed",
+    "timeout": "Timed out"
+  },
+  "stepMessage": {
+    "present": "Found in the app.",
+    "missing": "Not set up in the app yet."
   }
 }

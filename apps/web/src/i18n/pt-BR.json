@@ -22,9 +22,9 @@
     "save": "Salvar alterações",
     "working": "Aguarde…",
     "none": "—",
-    "comingSoon": "Em breve",
     "checkedAt": "Verificado em {{time}}",
-    "lastUpdated": "Atualizado em {{time}}"
+    "lastUpdated": "Atualizado em {{time}}",
+    "close": "Fechar"
   },
   "status": {
     "unavailable": "Indisponível",
@@ -71,7 +71,15 @@
     "internal": "O servidor teve um erro inesperado. Veja os logs do farmhand.",
     "setup_complete": "A configuração inicial já foi feita.",
     "unknown_iface": "A interface {{iface}} não existe neste host.",
-    "INVALID_EMAIL_OR_PASSWORD": "E-mail ou senha incorretos."
+    "INVALID_EMAIL_OR_PASSWORD": "E-mail ou senha incorretos.",
+    "busy": "Outra operação da farm está em andamento. Espere terminar e tente de novo.",
+    "bad_token": "A verificação expirou. Verifique a impressora de novo antes de aprovar.",
+    "rejected": "O servidor recusou este endereço de impressora.",
+    "waiting": "O companion do Mobileraker só sobe depois que uma impressora é aprovada. Aprove uma impressora primeiro.",
+    "unavailable": "O helper root não respondeu. Confira se o farmhand-helper está rodando no host.",
+    "failed": "O host recusou a ação. Veja os logs do farmhand.",
+    "invalid": "O host rejeitou a requisição como inválida.",
+    "timeout": "O host não respondeu a tempo. Confira o resultado antes de tentar de novo."
   },
   "notFound": {
     "title": "Página não encontrada",
@@ -84,7 +92,8 @@
     "password": "Senha",
     "printerName": "Nome da impressora",
     "ip": "Endereço IP",
-    "port": "Porta"
+    "port": "Porta",
+    "printerNameOptional": "Nome da impressora (opcional)"
   },
   "login": {
     "title": "Entrar",
@@ -161,7 +170,17 @@
     "file": "Arquivo",
     "duration": "Imprimindo há",
     "message": "Mensagem",
-    "updatedAt": "Último sinal"
+    "updatedAt": "Último sinal",
+    "diagnosing": "Verificando…",
+    "repairResult": "Última tentativa",
+    "repairTitle": "Repetir as etapas com falha em {{name}}?",
+    "repairEffect": "Roda de novo: {{steps}}.",
+    "repairKeep": "As etapas que já deram certo não são mexidas.",
+    "diag": {
+      "title": "Diagnóstico",
+      "reachable": "Moonraker acessível",
+      "unreachable": "Moonraker inacessível"
+    }
   },
   "printerSource": {
     "discovery": "Encontrada na descoberta",
@@ -227,15 +246,25 @@
       "description_other": "A descoberta varre a rede local a cada {{count}} minutos. Confira se a impressora está ligada e o Moonraker rodando, ou adicione pelo IP.",
       "descriptionNoInterval": "A descoberta varre a rede local periodicamente. Confira se a impressora está ligada e o Moonraker rodando, ou adicione pelo IP."
     },
-    "lastSeen": "Vista em {{time}}",
-    "klippy": "Klipper: {{state}}",
+    "lastSeen": "Vista {{time}}",
     "add": {
       "title": "Adicionar por IP",
       "ipHint": "Somente IPv4, por exemplo 192.168.1.50.",
-      "check": "Verificar",
-      "valid": "Tudo certo. A adição de impressoras chega na próxima versão.",
-      "submit": "Adicionar impressora"
-    }
+      "check": "Verificar impressora",
+      "checking": "Verificando…",
+      "found": "O Moonraker respondeu.",
+      "nameHint": "Deixe vazio para usar o hostname da impressora."
+    },
+    "searching": "Procurando…",
+    "busy": "Já tem uma busca em andamento.",
+    "lastError": "A última busca falhou: {{error}}",
+    "unnamed": "Impressora sem nome",
+    "moonraker": "Moonraker {{version}}",
+    "approve": "Aprovar",
+    "dismiss": "Dispensar",
+    "dismissTitle": "Dispensar {{name}}?",
+    "dismissEffect": "Ela sai desta lista e não aparece de novo.",
+    "dismissUndo": "Nada muda na impressora. Você ainda pode adicioná-la pelo IP."
   },
   "validation": {
     "name": {
@@ -265,16 +294,41 @@
     "title": "Manutenção",
     "description": "Reinício de serviços, logs e backups.",
     "services": {
-      "title": "Serviços",
-      "description": "Reiniciar os serviços da farm por aqui chega em uma próxima versão."
+      "title": "Serviços"
     },
     "logs": {
-      "title": "Logs",
-      "description": "Ler os logs dos serviços por aqui chega em uma próxima versão."
+      "title": "Logs: {{source}}",
+      "open": "Logs",
+      "refresh": "Atualizar",
+      "hint": "As últimas 100 linhas, sem segredos.",
+      "fetched": "Buscado em {{time}}",
+      "lines_one": "{{count}} linha",
+      "lines_many": "{{count}} linhas",
+      "lines_other": "{{count}} linhas",
+      "empty": "Nenhuma linha de log."
     },
     "backup": {
       "title": "Backup",
-      "description": "Backups da configuração da farm chegam em uma próxima versão."
+      "state": "Estado",
+      "result": "Último resultado",
+      "startedAt": "Início",
+      "finishedAt": "Fim",
+      "run": "Fazer backup",
+      "running": "Backup em andamento…",
+      "started": "Backup iniciado.",
+      "confirmTitle": "Fazer o backup do host agora?",
+      "effect": "Isso inicia a unidade de backup do host e pode demorar.",
+      "limit": "Dá para iniciar um backup a cada 10 minutos."
+    },
+    "fakeHelper": "Helper de desenvolvimento: nada é alterado no host.",
+    "guard": "Guarda do firewall",
+    "restart": {
+      "button": "Reiniciar",
+      "title": "Reiniciar o {{service}}?",
+      "effect": "Gerenciar impressoras por este app fica pausado por até um minuto.",
+      "prints": "As impressões não são interrompidas.",
+      "ready": "O {{service}} voltou: {{state}}.",
+      "notReady": "O {{service}} não ficou saudável em um minuto. Estado: {{state}}."
     }
   },
   "operations": {
@@ -287,7 +341,9 @@
       "status": "Resultado",
       "started": "Início",
       "finished": "Fim"
-    }
+    },
+    "noSteps": "Nenhuma etapa registrada.",
+    "input": "Entrada"
   },
   "operationKind": {
     "approve": "Aprovar impressora",
@@ -357,5 +413,106 @@
     "copied": "Copiado",
     "aria": "Copiar {{label}}",
     "manual": "Esta conexão bloqueia a cópia. O texto está selecionado; pressione Ctrl+C ou Cmd+C."
+  },
+  "reasons": {
+    "invalid_ipv4": "Isso não é um endereço IPv4.",
+    "unspecified": "Endereços 0.x.x.x não podem ser impressoras.",
+    "loopback": "Endereços de loopback apontam para este host, não para uma impressora.",
+    "multicast": "Endereços multicast não podem ser impressoras.",
+    "reserved": "Endereços reservados não podem ser impressoras.",
+    "link_local": "Endereços link-local (169.254.x.x) não são aceitos. Dê à impressora um endereço normal da rede local.",
+    "own_address": "Esse é o endereço deste host, não de uma impressora.",
+    "outside_lan": "Esse endereço está fora das interfaces de rede definidas em Configurações.",
+    "network_or_broadcast": "Esse é o endereço de rede ou de broadcast da rede local, não de uma impressora.",
+    "refused": "A impressora recusou a conexão. Confira se o Moonraker está rodando e se a porta está certa.",
+    "timeout": "A impressora não respondeu a tempo. Confira se ela está ligada e na rede.",
+    "unreachable": "Não há rota para esse endereço. Confira o IP e se a impressora está na mesma rede.",
+    "dns": "Não foi possível resolver o nome.",
+    "network": "Um erro de rede interrompeu a verificação. Tente de novo.",
+    "http": "Algo respondeu nessa porta, mas não é o Moonraker (HTTP {{status}}).",
+    "not_json": "Algo respondeu nessa porta, mas não é o Moonraker.",
+    "unexpected_response": "O Moonraker respondeu algo que o farmhand não entende.",
+    "record_failed": "A impressora respondeu, mas o farmhand não conseguiu salvá-la. Tente de novo.",
+    "other": "Não foi possível verificar a impressora ({{reason}})."
+  },
+  "klippy": {
+    "none": "Klipper: desconhecido",
+    "ready": "Klipper pronto",
+    "startup": "Klipper iniciando",
+    "shutdown": "Klipper desligado",
+    "error": "Erro no Klipper",
+    "disconnected": "Klipper desconectado",
+    "other": "Klipper: {{state}}"
+  },
+  "candidateSource": {
+    "mdns": "Achada via mDNS",
+    "neigh": "Achada na rede local",
+    "manual": "Adicionada por IP"
+  },
+  "approve": {
+    "title": "Aprovar impressora",
+    "checkHint": "Veja o que a aprovação muda e depois confirme.",
+    "renameHint": "Verifique de novo para usar o novo nome.",
+    "address": "Endereço",
+    "moonraker": "Moonraker",
+    "klipper": "Klipper",
+    "effectsTitle": "O que a aprovação faz",
+    "effect": {
+      "allowlist": "Libera esta impressora para acessar o Spoolman na rede local.",
+      "printstash": "Cadastra a impressora na fila de impressão do PrintStash.",
+      "fdm": "Coloca a impressora no painel do FDM Monster. O FDM Monster se conecta a ela, então ela precisa estar ligada.",
+      "mobileraker": "Envia notificações para o celular. O companion reinicia por alguns segundos."
+    },
+    "willDo": {
+      "add": "Vai adicionar",
+      "already": "Já configurado",
+      "unknown": "Não deu para verificar: {{detail}}"
+    },
+    "recheck": "Verificar de novo",
+    "submit": "Aprovar e configurar",
+    "expired": "A verificação expirou, então o farmhand verificou a impressora de novo. Revise e confirme.",
+    "applyTitle": "Configurando a impressora",
+    "applyHint": "Mantenha esta janela aberta.",
+    "applying": "Executando cada etapa. Pode levar até um minuto.",
+    "doneTitle": "Impressora aprovada",
+    "doneHint": "Todas as etapas terminaram.",
+    "partialTitle": "Aprovada, mas com problemas",
+    "failedSteps": "Estas etapas não terminaram: {{steps}}.",
+    "openPrinter": "Abrir impressora",
+    "next": {
+      "title": "Próximos passos",
+      "spoolman": "Cole o bloco do Spoolman no moonraker.conf (está na página da impressora).",
+      "mobileraker": "Adicione a impressora no app Mobileraker com o endereço da página da impressora.",
+      "ha": "Opcional: conecte o Home Assistant seguindo os passos da página da impressora."
+    }
+  },
+  "serviceState": {
+    "running": "Rodando",
+    "exited": "Parado",
+    "missing": "Ausente",
+    "unknown": "Desconhecido"
+  },
+  "serviceHealth": {
+    "healthy": "Saudável",
+    "unhealthy": "Com problema",
+    "starting": "Iniciando",
+    "none": "Sem verificação de saúde"
+  },
+  "unitState": {
+    "active": "Ativo",
+    "activating": "Iniciando",
+    "deactivating": "Parando",
+    "inactive": "Ocioso",
+    "failed": "Falhou"
+  },
+  "unitResult": {
+    "success": "Sucesso",
+    "exit-code": "Falhou (código de saída)",
+    "signal": "Encerrado",
+    "timeout": "Tempo esgotado"
+  },
+  "stepMessage": {
+    "present": "Encontrado no app.",
+    "missing": "Ainda não configurado no app."
   }
 }

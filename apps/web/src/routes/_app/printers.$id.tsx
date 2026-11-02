@@ -1,21 +1,26 @@
-import { STEP_IDS } from "@farmhand/contracts";
-import { useQuery } from "@tanstack/react-query";
+import { STEP_IDS, type Step } from "@farmhand/contracts";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { RotateCwIcon, StethoscopeIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { KlippyBadge } from "@/components/app/ApproveWizard";
+import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { CopyBlock } from "@/components/app/CopyBlock";
 import { PageHeader } from "@/components/app/PageHeader";
 import { ConnectionBadge, JobBadge, JobProgress, StaleBadge, Temps } from "@/components/app/printer";
-import { QueryState } from "@/components/app/QueryState";
+import { QueryState, reasonText, useErrorText } from "@/components/app/QueryState";
+import { StatusBadge } from "@/components/app/StatusBadge";
 import { StepList } from "@/components/app/StepList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { fetchJson } from "@/lib/api";
 import { fmtDateTime, fmtDuration } from "@/lib/format";
 import { useLive } from "@/lib/live";
 import { q } from "@/lib/queries";
-import type { Printer } from "@/lib/types";
+import { useHasRole } from "@/lib/session";
+import type { Identity, Printer } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/printers/$id")({
   staticData: { titleKey: "printer.title" },
@@ -28,18 +33,9 @@ function PrinterPage() {
   return <QueryState query={printer}>{(p) => <PrinterDetail printer={p} />}</QueryState>;
 }
 
-function SoonButton({ icon, label }: { icon: ReactNode; label: string }) {
-  const { t } = useTranslation();
-  // focusableWhenDisabled keeps the button reachable so the tooltip can explain why it is off.
-  return (
-    <Tooltip>
-      <TooltipTrigger render={<Button variant="outline" disabled focusableWhenDisabled />}>
-        {icon}
-        {label}
-      </TooltipTrigger>
-      <TooltipContent>{t("common.comingSoon")}</TooltipContent>
-    </Tooltip>
-  );
+interface Diagnostics {
+  checkedAt: string;
+  moonraker: { ok: true; identity: Identity } | { ok: false; error: string };
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -55,6 +51,49 @@ function PrinterDetail({ printer: p }: { printer: Printer }) {
   const { t } = useTranslation();
   const live = useLive().data?.printers.get(p.id) ?? p.live;
   const snippets = useQuery(q.snippets(p.id));
+  const qc = useQueryClient();
+  const errorText = useErrorText();
+  const canOperate = useHasRole("operator");
+  const [diag, setDiag] = useState<Diagnostics | null>(null);
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [confirmRepair, setConfirmRepair] = useState(false);
+  const [repaired, setRepaired] = useState<Step[] | null>(null);
+  const steps = STEP_IDS.map((id) => ({
+    id,
+    status: p.integrations[id]?.status ?? "unknown",
+    message: p.integrations[id]?.message ?? "",
+    checkedAt: p.integrations[id]?.checkedAt,
+  }));
+  const failing = steps.filter((s) => s.status === "failed" || s.status === "unknown");
+  const refresh = () => qc.invalidateQueries({ queryKey: q.printer(p.id).queryKey });
+
+  const diagnose = async () => {
+    setDiagnosing(true);
+    try {
+      setDiag(
+        await fetchJson<Diagnostics>(`/printers/${encodeURIComponent(p.id)}/diagnostics`, { method: "POST" }),
+      );
+      await refresh();
+    } catch (err) {
+      toast.error(errorText(err));
+    } finally {
+      setDiagnosing(false);
+    }
+  };
+
+  const repair = async () => {
+    try {
+      const r = await fetchJson<{ steps: Step[] }>(`/printers/${encodeURIComponent(p.id)}/repair`, {
+        method: "POST",
+        json: { confirm: true },
+      });
+      setRepaired(r.steps);
+      await refresh();
+    } catch (err) {
+      toast.error(errorText(err));
+      throw err;
+    }
+  };
 
   return (
     <>
@@ -70,10 +109,20 @@ function PrinterDetail({ printer: p }: { printer: Printer }) {
           </span>
         }
         actions={
-          <>
-            <SoonButton icon={<StethoscopeIcon aria-hidden />} label={t("printer.diagnostics")} />
-            <SoonButton icon={<RotateCwIcon aria-hidden />} label={t("printer.retryFailed")} />
-          </>
+          canOperate ? (
+            <>
+              <Button variant="outline" onClick={diagnose} disabled={diagnosing}>
+                <StethoscopeIcon aria-hidden />
+                {diagnosing ? t("printer.diagnosing") : t("printer.diagnostics")}
+              </Button>
+              {failing.length ? (
+                <Button variant="outline" onClick={() => setConfirmRepair(true)}>
+                  <RotateCwIcon aria-hidden />
+                  {t("printer.retryFailed")}
+                </Button>
+              ) : null}
+            </>
+          ) : null
         }
       />
 
@@ -117,18 +166,53 @@ function PrinterDetail({ printer: p }: { printer: Printer }) {
               <h2>{t("printer.integrations")}</h2>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <StepList
-              steps={STEP_IDS.map((id) => ({
-                id,
-                status: p.integrations[id]?.status ?? "unknown",
-                message: p.integrations[id]?.message ?? "",
-                checkedAt: p.integrations[id]?.checkedAt,
-              }))}
-            />
+          <CardContent className="space-y-4">
+            {diag ? (
+              <div role="status" className="space-y-2 rounded-lg border p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-medium">{t("printer.diag.title")}</p>
+                  <StatusBadge
+                    tone={diag.moonraker.ok ? "ok" : "bad"}
+                    label={diag.moonraker.ok ? t("printer.diag.reachable") : t("printer.diag.unreachable")}
+                  />
+                </div>
+                {diag.moonraker.ok ? (
+                  <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                    <span>
+                      {t("discover.moonraker", { version: diag.moonraker.identity.moonrakerVersion })}
+                    </span>
+                    <KlippyBadge state={diag.moonraker.identity.klippyState} />
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">{reasonText(t, diag.moonraker.error)}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {t("common.checkedAt", { time: fmtDateTime(diag.checkedAt) })}
+                </p>
+              </div>
+            ) : null}
+            {repaired ? (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t("printer.repairResult")}</p>
+                <StepList steps={repaired} />
+              </div>
+            ) : null}
+            <StepList steps={steps} />
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={confirmRepair}
+        onOpenChange={setConfirmRepair}
+        title={t("printer.repairTitle", { name: p.name })}
+        effects={[
+          t("printer.repairEffect", { steps: failing.map((s) => t(`steps.${s.id}`)).join(", ") }),
+          t("printer.repairKeep"),
+        ]}
+        confirmLabel={t("printer.retryFailed")}
+        onConfirm={repair}
+      />
 
       <Card>
         <CardHeader>

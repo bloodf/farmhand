@@ -12,3 +12,4 @@ playwright-report/
 *.db-*
 apps/server/.farmhand-fake-helper/
 .farmhand-e2e-helper/
+__pycache__/

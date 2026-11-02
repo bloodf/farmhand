@@ -1,4 +1,5 @@
 import type { UseQueryResult } from "@tanstack/react-query";
+import type { TFunction } from "i18next";
 import { AlertTriangleIcon, RotateCwIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,10 +11,19 @@ import { StatusBadge } from "./StatusBadge";
 
 export function useErrorText() {
   const { t } = useTranslation();
-  return (err: unknown): string =>
-    err instanceof ApiError
-      ? t(`errors.${err.code}`, { defaultValue: t("errors.generic", { status: err.status }) })
-      : t("errors.network");
+  return (err: unknown): string => {
+    if (!(err instanceof ApiError)) return t("errors.network");
+    const reason = (err.body as { reason?: unknown } | null)?.reason;
+    if (err.code === "rejected" && typeof reason === "string") return reasonText(t, reason);
+    return t(`errors.${err.code}`, { defaultValue: t("errors.generic", { status: err.status }) });
+  };
+}
+
+/** Why a printer address was refused, from the server's reason code. */
+export function reasonText(t: TFunction, reason: string): string {
+  const http = /^http_(\d+)$/.exec(reason);
+  if (http) return t("reasons.http", { status: http[1] });
+  return t(`reasons.${reason}`, { defaultValue: t("reasons.other", { reason }) });
 }
 
 /** A source that failed: say so, with when it was last checked. Never render it as zero. */

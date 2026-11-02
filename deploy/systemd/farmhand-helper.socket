@@ -1,0 +1,14 @@
+[Unit]
+Description=farmhand root helper socket
+
+[Socket]
+ListenStream=/run/farmhand/helper.sock
+SocketUser=root
+SocketGroup=farmhand
+SocketMode=0660
+# /run/farmhand itself is created root:farmhand 0750 by
+# /etc/tmpfiles.d/farmhand.conf before sockets start.
+DirectoryMode=0750
+
+[Install]
+WantedBy=sockets.target

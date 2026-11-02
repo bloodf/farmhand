@@ -6,6 +6,7 @@ import type {
   OperationStatus,
   PrinterLive,
   Role,
+  ServiceId,
   Step,
   StepId,
   StepStatus,
@@ -98,10 +99,10 @@ export interface AppEntry {
 export interface Candidate {
   host: string;
   port: number;
-  name: string;
+  name: string | null;
   klippyState: string | null;
   moonrakerVersion: string | null;
-  source: string;
+  source: "mdns" | "neigh" | "manual";
   firstSeenAt: string;
   lastSeenAt: string;
 }
@@ -111,4 +112,36 @@ export interface LiveState {
   printers: Map<string, PrinterLive>;
   apps: AppHealth[];
   discovery: DiscoveryState;
+}
+
+export interface Identity {
+  klippyState: string;
+  moonrakerVersion: string;
+  hostname: string | null;
+}
+
+export interface Effect {
+  id: StepId;
+  willDo: "add" | "already" | "unknown";
+  detail: string;
+}
+
+export interface ServiceRow {
+  id: ServiceId;
+  label: string;
+  state: "running" | "exited" | "missing" | "unknown";
+  health: "healthy" | "unhealthy" | "starting" | "none";
+}
+
+export interface Services {
+  items: ServiceRow[];
+  guard: string;
+  helper: "socket" | "fake";
+}
+
+export interface BackupStatus {
+  activeState: string;
+  result: string;
+  startedAt: string | null;
+  finishedAt: string | null;
 }

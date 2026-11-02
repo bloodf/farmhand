@@ -1,0 +1,13 @@
+[Unit]
+Description=farmhand root helper (fixed verbs only)
+Requires=farmhand-helper.socket
+After=docker.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 -I /usr/local/libexec/farmhand/farmhand-helper
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes

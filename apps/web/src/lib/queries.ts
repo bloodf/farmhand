@@ -1,12 +1,15 @@
+import type { LogSource } from "@farmhand/contracts";
 import { queryOptions } from "@tanstack/react-query";
 import { ApiError, fetchJson } from "./api";
 import type {
   AppEntry,
+  BackupStatus,
   Candidate,
   Integrations,
   Operation,
   Overview,
   Printer,
+  Services,
   Session,
   Settings,
   Snippets,
@@ -52,13 +55,19 @@ export const q = {
   apps: queryOptions({ queryKey: ["apps"], queryFn: () => list<AppEntry>("/apps") }),
   candidates: queryOptions({
     queryKey: ["candidates"],
-    // ponytail: /api/candidates lands in phase 5; until then a 404 means "nothing found yet".
-    queryFn: () =>
-      list<Candidate>("/candidates").catch((err: unknown) => {
-        if (err instanceof ApiError && err.status === 404) return [];
-        throw err;
-      }),
+    queryFn: () => list<Candidate>("/candidates"),
   }),
+  services: queryOptions({ queryKey: ["services"], queryFn: () => fetchJson<Services>("/services") }),
+  backupStatus: queryOptions({
+    queryKey: ["backup-status"],
+    queryFn: () => fetchJson<BackupStatus>("/backups/status"),
+  }),
+  logs: (source: LogSource) =>
+    queryOptions({
+      queryKey: ["logs", source],
+      queryFn: () => fetchJson<{ source: LogSource; lines: string[]; fetchedAt: string }>(`/logs/${source}`),
+      staleTime: 0,
+    }),
   settings: queryOptions({ queryKey: ["settings"], queryFn: () => fetchJson<Settings>("/settings") }),
   integrations: queryOptions({
     queryKey: ["settings", "integrations"],

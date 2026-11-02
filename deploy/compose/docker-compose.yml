@@ -1,0 +1,129 @@
+# farmhand reference stack: filament inventory (Spoolman), model library and
+# the single job queue (PrintStash), fleet grid (FDM Monster), browser slicer
+# (OrcaSlicer) and Mobileraker push notifications.
+#
+# Run as compose project "farmhand" from this directory:
+#   docker compose -p farmhand up -d
+# Variables come from .env next to this file (copy .env.example).
+#
+# Exposure: every web UI binds loopback only. Spoolman also binds LAN_IP so
+# printers can report filament use; farmhand-guard.service drops traffic to
+# LAN_IP:7912 unless the source is in the approved printer allowlist.
+#
+# Queue ownership: PrintStash is the only component that dispatches jobs.
+# Spoolman uses its built-in SQLite under ${FARMHAND_DATA_DIR}/spoolman. For
+# PostgreSQL add docker-compose.postgres.yml (see that file).
+name: farmhand
+
+x-common: &common
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  spoolman:
+    <<: *common
+    image: ghcr.io/donkie/spoolman:0.27.1@sha256:1ebb4f6a62c2e72a07f18b07ebfdbd96322f5bc2eb72570af3088f68d7c393b1
+    environment:
+      TZ: ${TZ:-UTC}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+    ports:
+      - "127.0.0.1:7912:8000"
+      - "${LAN_IP:?set LAN_IP in .env}:7912:8000"
+    volumes:
+      - ${FARMHAND_DATA_DIR:?set FARMHAND_DATA_DIR in .env}/spoolman:/home/app/.local/share/spoolman
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  printstash:
+    <<: *common
+    image: ghcr.io/xiao-villamor/printstash:0.15.1@sha256:3cd913faf978c3a0461cd8709cc031f1553d71941a0597f73784b22a60cb7546
+    stop_grace_period: 60s
+    environment:
+      TZ: ${TZ:-UTC}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      VAULT_RESTART_ENABLED: "true"
+    # Owner bootstrap and host settings (VAULT_SETUP_MODE, VAULT_SETUP_ALLOWED_HOSTS,
+    # VAULT_SESSION_COOKIE_SECURE, ...) go in printstash.env next to this file.
+    env_file:
+      - path: ./printstash.env
+        required: false
+    ports:
+      - "127.0.0.1:3460:3000"
+    volumes:
+      - ${FARMHAND_DATA_DIR:?set FARMHAND_DATA_DIR in .env}/printstash:/data
+    depends_on:
+      spoolman: { condition: service_healthy }
+
+  fdm-monster:
+    <<: *common
+    image: fdmmonster/fdm-monster:2.1.1@sha256:6baf250a7d47162f62e53a4c45cf1e511c7f399d00772c98faf5c8a4a8d23dfd
+    environment:
+      TZ: ${TZ:-UTC}
+      NODE_ENV: production
+      SERVER_PORT: "4000"
+      OVERRIDE_IS_DEMO_MODE: "false"
+      OVERRIDE_LOGIN_REQUIRED: "true"
+      OVERRIDE_REGISTRATION_ENABLED: "false"
+      ENABLE_CLIENT_DIST_AUTO_UPDATE: "false"
+      MEDIA_PATH: /app/media
+      DATABASE_PATH: /app/database
+    env_file:
+      - path: ./fdm-monster.env
+        required: false
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - ${FARMHAND_DATA_DIR:?set FARMHAND_DATA_DIR in .env}/fdm-monster/media:/app/media
+      - ${FARMHAND_DATA_DIR:?set FARMHAND_DATA_DIR in .env}/fdm-monster/database:/app/database
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/api/v2/test').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  orcaslicer:
+    <<: *common
+    image: lscr.io/linuxserver/orcaslicer:2.4.2@sha256:b8806fab27725e26ddd14a24f22990bf0780bc7fdadb43e23120b9a1c16c8b88
+    shm_size: "1gb"
+    environment:
+      TZ: ${TZ:-UTC}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+    env_file:
+      - path: ./orcaslicer.env
+        required: false
+    ports:
+      - "127.0.0.1:3470:3000"
+    volumes:
+      - ${FARMHAND_DATA_DIR:?set FARMHAND_DATA_DIR in .env}/orcaslicer:/config
+
+  mobileraker:
+    <<: *common
+    image: ghcr.io/clon1998/mobileraker_companion@sha256:4aad389e1da183d38e5ebb57fa16a78464e465874788a0deeaf3b8458883d821
+    # Started by farmhand-helper once mobileraker.conf has a [printer] section.
+    profiles: [companion]
+    environment:
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ${FARMHAND_DATA_DIR:?set FARMHAND_DATA_DIR in .env}/mobileraker:/opt/printer_data/config

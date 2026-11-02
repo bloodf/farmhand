@@ -32,3 +32,17 @@ export const fmtDuration = (s: number): string => {
     new Intl.NumberFormat(lang(), { style: "unit", unit: u, unitDisplay: "narrow" }).format(value);
   return h > 0 ? `${unit(h, "hour")} ${unit(m, "minute")}` : unit(m, "minute");
 };
+
+const REL_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["day", 86_400],
+  ["hour", 3600],
+  ["minute", 60],
+  ["second", 1],
+];
+
+/** "3 minutes ago". Pair it with fmtDateTime in a title for the exact time. */
+export const fmtRelative = (iso: string, now = Date.now()): string => {
+  const diff = Math.round((new Date(iso).getTime() - now) / 1000);
+  const [unit, size] = REL_UNITS.find(([, s]) => Math.abs(diff) >= s) ?? ["second", 1];
+  return new Intl.RelativeTimeFormat(lang(), { numeric: "auto" }).format(Math.round(diff / size), unit);
+};

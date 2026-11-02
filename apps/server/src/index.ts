@@ -16,6 +16,8 @@ const server = serve({ fetch: app.fetch, port: env.FARMHAND_PORT, hostname: env.
 );
 
 const shutdown = () => {
+  // Open SSE streams would keep close() waiting forever.
+  (server as { closeAllConnections?: () => void }).closeAllConnections?.();
   server.close(() => {
     void deps.close().then(() => process.exit(0));
   });

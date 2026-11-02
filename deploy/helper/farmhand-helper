@@ -1,0 +1,605 @@
+#!/usr/bin/env python3
+"""farmhand-helper: the only path from the farmhand web server to root.
+
+Not a command runner. A request names one fixed verb plus a few validated
+parameters; argv, paths, environment and timeouts are fixed here or come from
+/etc/farmhand/helper.env, which is root-owned. Nothing the web server can write
+decides what this script touches.
+
+Wire protocol: one JSON object per connection, newline-terminated:
+  {"op": "...", ...params}  ->  {"ok": true, ...} | {"ok": false, "code": "...", "message": "..."}
+
+Verbs: ping, status, allowlist-add, allowlist-list, mobileraker-add,
+mobileraker-list, restart, logs, backup-start, backup-status.
+
+Socket-activated by farmhand-helper.socket. Only uid 0 and ALLOWED_UID may talk
+to it (SO_PEERCRED). Mutations take /run/lock/farmhand.lock (non-blocking) so
+two of them never overlap; reads never block.
+"""
+
+from __future__ import annotations
+
+import datetime
+import fcntl
+import ipaddress
+import json
+import os
+import pathlib
+import re
+import signal
+import socket
+import struct
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import unicodedata
+
+ENV_FILE = os.environ.get("FARMHAND_HELPER_ENV", "/etc/farmhand/helper.env")
+SOCKET_PATH = "/run/farmhand/helper.sock"
+SAFE_ENV = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LANG": "C.UTF-8", "HOME": "/root"}
+
+BIN = {
+    "docker": "/usr/bin/docker",
+    "systemctl": "/usr/bin/systemctl",
+    "journalctl": "/usr/bin/journalctl",
+    "ip": "/usr/sbin/ip",
+}
+if os.environ.get("FARMHAND_HELPER_BIN_DIR"):  # tests only: run shims instead of the real binaries
+    BIN = {k: os.path.join(os.environ["FARMHAND_HELPER_BIN_DIR"], k) for k in BIN}
+
+DEFAULTS = {
+    "COMPOSE_FILE": "",
+    "COMPOSE_PROJECT": "farmhand",
+    "ALLOW_FILE": "",
+    "MR_CONF": "",
+    "GUARD_UNIT": "",
+    "BACKUP_UNIT": "",
+    "LOCK_FILE": "/run/lock/farmhand.lock",
+    "TZ": "UTC",
+    "LAN_IFACES": "br0",
+    "ALLOWED_UID": "",
+}
+
+SERVICES = ("spoolman", "printstash", "fdm-monster", "orcaslicer", "mobileraker")
+MUTATIONS = {"allowlist-add", "mobileraker-add", "restart", "backup-start"}
+
+MAX_REQUEST = 4096
+MAX_OUTPUT = 256 * 1024
+RUN_TIMEOUT = 120
+RESTART_TIMEOUT = 90
+READY_TIMEOUT = 60
+POLL_INTERVAL = 2
+LOG_LINES = 100
+LOG_BYTES = 64 * 1024
+LOG_LINE_CHARS = 4096
+MR_OWNER = (1000, 1000)
+
+CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f  ]")
+ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b[@-_]")
+REDACT = (
+    (re.compile(r"://[^/\s:]+:[^@\s]+@"), "://[redacted]@"),
+    (re.compile(r"Bearer\s+\S+", re.I), "Bearer [redacted]"),
+    (re.compile(r"(password|passwd|token|secret|api[_-]?key)([\"']?\s*[:=]\s*[\"']?)\S+", re.I), r"\1\2[redacted]"),
+    (re.compile(r"eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}"), "[jwt]"),
+)
+URI_LINE = re.compile(r"^moonraker_uri:\s*(\S+)", re.M)
+
+busy = threading.Lock()
+
+
+class Invalid(Exception):
+    """A request parameter failed validation; the message is short and secret-free."""
+
+
+def fail(reason: str) -> None:
+    raise Invalid(reason)
+
+
+def err(code: str, message: str) -> dict:
+    return {"ok": False, "code": code, "message": message}
+
+
+def not_configured(key: str) -> dict:
+    return err("not_configured", f"{key} is not set in helper.env")
+
+
+def now() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+
+
+def short(text: object, limit: int = 200) -> str:
+    return CONTROL.sub(" ", str(text))[:limit]
+
+
+def run_fixed(argv: list[str], timeout: int) -> tuple[int | None, bytes]:
+    """Run one fixed argv in its own session; kill the whole group on timeout. rc None = timeout."""
+    proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                            env=SAFE_ENV, cwd="/", start_new_session=True, close_fds=True)
+    try:
+        out, _ = proc.communicate(timeout=timeout)
+        return proc.returncode, out[:MAX_OUTPUT]
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.communicate()
+        return None, b""
+
+
+def load_config(path: str) -> dict:
+    """KEY=VALUE lines, no shell expansion. Unknown keys are ignored; a missing file means defaults."""
+    cfg = dict(DEFAULTS)
+    try:
+        text = pathlib.Path(path).read_text()
+    except FileNotFoundError:
+        return cfg
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+        if key in cfg:
+            cfg[key] = value or DEFAULTS[key]
+    return cfg
+
+
+# ---------------------------------------------------------------------------
+# Validation (same rules as @farmhand/contracts checkTarget / nameProblem)
+# ---------------------------------------------------------------------------
+
+def ip_addrs(*args: str) -> list:
+    rc, out = run_fixed([BIN["ip"], "-j", "-4", "addr", "show", *args], 5)
+    if rc != 0:
+        raise ValueError("ip failed")
+    return [ipaddress.IPv4Interface(f"{a['local']}/{a['prefixlen']}")
+            for link in json.loads(out) for a in link.get("addr_info", []) if a.get("family") == "inet"]
+
+
+def host_addrs() -> list[ipaddress.IPv4Interface]:
+    try:
+        return ip_addrs()
+    except (OSError, ValueError, KeyError, TypeError):
+        fail("cannot read host addresses")
+        raise
+
+
+def check_ip(raw: object, lan: list[str]) -> str:
+    if not isinstance(raw, str) or not re.fullmatch(r"[0-9]{1,3}(\.[0-9]{1,3}){3}", raw):
+        fail("not an IPv4 address")
+    try:
+        addr = ipaddress.IPv4Address(raw)
+    except ValueError:
+        fail("not an IPv4 address")
+    if addr.is_unspecified or addr.is_loopback or addr.is_multicast or addr.is_link_local \
+            or addr.is_reserved or addr == ipaddress.IPv4Address("255.255.255.255"):
+        fail("address class not allowed")
+    addrs = host_addrs()
+    if any(i.ip == addr for i in addrs):
+        fail("address belongs to this server")
+    if lan:
+        nets = []
+        for iface in lan:
+            if not re.fullmatch(r"[A-Za-z0-9_.-]{1,15}", iface):
+                fail("invalid LAN interface name")
+            try:
+                nets += [i.network for i in ip_addrs("dev", iface)]
+            except (OSError, ValueError, KeyError, TypeError):
+                fail("LAN interface unavailable")
+        net = next((n for n in nets if addr in n), None)
+        if net is None:
+            fail("address is outside the directly connected LAN")
+        if net.prefixlen < 31 and addr in (net.network_address, net.broadcast_address):
+            fail("network or broadcast address")
+    return str(addr)
+
+
+def check_port(raw: str) -> str:
+    if not re.fullmatch(r"[0-9]{1,5}", raw) or not 1 <= int(raw) <= 65535:
+        fail("port must be an integer 1-65535")
+    return str(int(raw))
+
+
+def check_name(raw: object) -> str:
+    if not isinstance(raw, str) or not 1 <= len(raw) <= 80:
+        fail("name must be 1-80 characters")
+    if raw != raw.strip():
+        fail("name has leading or trailing whitespace")
+    if any(c in "[]" or unicodedata.category(c).startswith("C") or unicodedata.category(c) in ("Zl", "Zp")
+           for c in raw):
+        fail("name has control characters or brackets")
+    return raw
+
+
+def lan_ifaces(cfg: dict) -> list[str]:
+    lan = [i.strip() for i in cfg["LAN_IFACES"].split(",") if i.strip()]
+    if not lan:
+        fail("no LAN interface configured")
+    return lan
+
+
+# ---------------------------------------------------------------------------
+# Files and compose
+# ---------------------------------------------------------------------------
+
+def read_text(path: str) -> str:
+    try:
+        return pathlib.Path(path).read_text()
+    except FileNotFoundError:
+        return ""
+
+
+def atomic_write(path: pathlib.Path, text: str) -> None:
+    """Replace `path` with `text`, keeping owner and mode of the existing file (0644 root when new)."""
+    try:
+        st = path.stat()
+        mode, owner = st.st_mode & 0o7777, (st.st_uid, st.st_gid)
+    except FileNotFoundError:
+        mode, owner = 0o644, None
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(tmp, mode)
+        if owner is not None:
+            try:
+                os.chown(tmp, *owner)
+            except PermissionError:
+                pass
+        os.replace(tmp, path)
+    finally:
+        pathlib.Path(tmp).unlink(missing_ok=True)
+
+
+def append_line(text: str, line: str) -> str:
+    return (text if not text or text.endswith("\n") else text + "\n") + line
+
+
+def compose(cfg: dict) -> list[str]:
+    argv = [BIN["docker"], "compose"]
+    for f in (f for f in cfg["COMPOSE_FILE"].split(":") if f):
+        argv += ["-f", f]
+    # The companion profile is always on so ps/logs/restart see mobileraker too.
+    return argv + ["-p", cfg["COMPOSE_PROJECT"], "--profile", "companion"]
+
+
+def service_states(cfg: dict) -> dict[str, tuple[str, str]] | None:
+    """service -> (state, health) for containers that exist; None when compose cannot answer."""
+    rc, out = run_fixed(compose(cfg) + ["ps", "-a", "--format", "json"], 20)
+    if rc != 0:
+        return None
+    text = out.decode("utf-8", "replace").strip()
+    try:
+        rows = json.loads(text) if text.startswith("[") else [json.loads(l) for l in text.splitlines() if l.strip()]
+    except ValueError:
+        return None
+    states = {}
+    for row in rows:
+        if not isinstance(row, dict) or row.get("Service") not in SERVICES:
+            continue
+        raw_state, raw_health = str(row.get("State", "")).lower(), str(row.get("Health", "")).lower()
+        state = "running" if raw_state == "running" else \
+            "exited" if raw_state in ("exited", "dead", "created") else "unknown"
+        health = raw_health if raw_health in ("healthy", "unhealthy", "starting") else "none"
+        states[row["Service"]] = (state, health)
+    return states
+
+
+def unit_active(unit: str) -> str:
+    _, out = run_fixed([BIN["systemctl"], "is-active", unit], 10)
+    return out.decode("utf-8", "replace").strip()
+
+
+# ---------------------------------------------------------------------------
+# Verbs
+# ---------------------------------------------------------------------------
+
+def op_ping(_: dict, __: dict) -> dict:
+    return {"ok": True}
+
+
+def op_status(_: dict, cfg: dict) -> dict:
+    if not cfg["COMPOSE_FILE"]:
+        return not_configured("COMPOSE_FILE")
+    states = service_states(cfg)
+    if states is None:
+        return err("failed", "docker compose ps failed")
+    services = [{"service": s, "state": states.get(s, ("missing", "none"))[0],
+                 "health": states.get(s, ("missing", "none"))[1]} for s in SERVICES]
+    if not cfg["GUARD_UNIT"]:
+        guard = "not_configured"
+    else:
+        guard = "active" if unit_active(cfg["GUARD_UNIT"]) == "active" else "inactive"
+    return {"ok": True, "services": services, "guard": guard}
+
+
+def allow_entries(path: str) -> list[str]:
+    return [e for e in (line.split("#")[0].strip() for line in read_text(path).splitlines()) if e]
+
+
+def op_allowlist_add(req: dict, cfg: dict) -> dict:
+    if not cfg["GUARD_UNIT"]:
+        return not_configured("GUARD_UNIT")
+    if not cfg["ALLOW_FILE"]:
+        return not_configured("ALLOW_FILE")
+    ip = check_ip(req.get("ip"), lan_ifaces(cfg))
+    already = ip in allow_entries(cfg["ALLOW_FILE"])
+    if not already:
+        path = pathlib.Path(cfg["ALLOW_FILE"])
+        atomic_write(path, append_line(read_text(str(path)), f"{ip}\n"))
+    rc, _ = run_fixed([BIN["systemctl"], "reload", cfg["GUARD_UNIT"]], 30)
+    if rc != 0:
+        return err("failed", "allowlist saved but guard reload failed")
+    return {"ok": True, "already": already}
+
+
+def op_allowlist_list(_: dict, cfg: dict) -> dict:
+    if not cfg["ALLOW_FILE"]:
+        return not_configured("ALLOW_FILE")
+    return {"ok": True, "ips": allow_entries(cfg["ALLOW_FILE"])}
+
+
+def mr_text(cfg: dict) -> str:
+    return read_text(cfg["MR_CONF"]) if cfg["MR_CONF"] else ""
+
+
+def op_mobileraker_add(req: dict, cfg: dict) -> dict:
+    if not cfg["MR_CONF"]:
+        return not_configured("MR_CONF")
+    if not cfg["COMPOSE_FILE"]:
+        return not_configured("COMPOSE_FILE")
+    ip = check_ip(req.get("ip"), lan_ifaces(cfg))
+    port = req.get("port")
+    if not isinstance(port, int) or isinstance(port, bool):
+        fail("port must be an integer 1-65535")
+    port = check_port(str(port))
+    name = check_name(req.get("name"))
+    uri = f"moonraker_uri: ws://{ip}:{port}/websocket"
+    path = pathlib.Path(cfg["MR_CONF"])
+    text = mr_text(cfg)
+    lines = text.splitlines()
+    already = uri in lines
+    if already:
+        states = service_states(cfg) or {}
+        if states.get("mobileraker", ("missing",))[0] == "running":
+            return {"ok": True, "already": True}
+    else:
+        if not path.exists():
+            text = f"[general]\ntimezone: {cfg['TZ']}\n"
+        section = f"[printer {name}]"
+        if section in lines:
+            section = f"[printer {name}-{ip}]"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write(path, append_line(text, f"\n{section}\n{uri}\n"))
+        try:
+            os.chown(path, *MR_OWNER)
+        except PermissionError:
+            pass
+    rc, _ = run_fixed(compose(cfg) + ["up", "-d", "--force-recreate", "mobileraker"], RUN_TIMEOUT)
+    if rc is None:
+        return err("timeout", "companion start timed out; outcome unknown")
+    if rc != 0:
+        return err("failed", "configuration saved but companion failed to start")
+    return {"ok": True, "already": already}
+
+
+def op_mobileraker_list(_: dict, cfg: dict) -> dict:
+    if not cfg["MR_CONF"]:
+        return not_configured("MR_CONF")
+    return {"ok": True, "uris": URI_LINE.findall(mr_text(cfg))}
+
+
+def op_restart(req: dict, cfg: dict) -> dict:
+    service = req.get("service")
+    if not isinstance(service, str) or service not in SERVICES:
+        return err("invalid", "unknown service")
+    if not cfg["COMPOSE_FILE"]:
+        return not_configured("COMPOSE_FILE")
+    if service == "mobileraker" and "[printer" not in mr_text(cfg):
+        return err("waiting", "companion waits for an approved printer")
+    states = service_states(cfg)
+    if states is None:
+        return err("failed", "docker compose ps failed")
+    action = ["restart", "--timeout", "60", service] if service in states else ["up", "-d", service]
+    rc, _ = run_fixed(compose(cfg) + action, RESTART_TIMEOUT)
+    if rc is None:
+        return err("timeout", f"docker compose {action[0]} timed out; outcome unknown")
+    if rc != 0:
+        return err("failed", f"docker compose {action[0]} failed")
+    accepted = now()
+    deadline = time.monotonic() + READY_TIMEOUT
+    state = "unknown none"
+    while True:
+        st, health = (service_states(cfg) or {}).get(service, ("missing", "none"))
+        state = f"{st} {health}"
+        if st == "running" and health in ("healthy", "none"):
+            return {"ok": True, "acceptedAt": accepted, "ready": True, "state": state}
+        if time.monotonic() >= deadline:
+            return {"ok": True, "acceptedAt": accepted, "ready": False, "state": state}
+        time.sleep(POLL_INTERVAL)
+
+
+def sanitize(out: bytes) -> list[str]:
+    """Strip ANSI and control characters, redact secrets, keep the last 100 lines within 64 KiB."""
+    lines = []
+    for raw in out.decode("utf-8", "replace").splitlines()[-LOG_LINES:]:
+        line = CONTROL.sub(" ", ANSI.sub("", raw))
+        for rx, repl in REDACT:
+            line = rx.sub(repl, line)
+        lines.append(line[:LOG_LINE_CHARS])
+    kept, size = [], 0
+    for line in reversed(lines):
+        size += len(line.encode()) + 1
+        if size > LOG_BYTES:
+            break
+        kept.append(line)
+    return kept[::-1]
+
+
+def op_logs(req: dict, cfg: dict) -> dict:
+    source = req.get("source")
+    if isinstance(source, str) and source in SERVICES:
+        if not cfg["COMPOSE_FILE"]:
+            return not_configured("COMPOSE_FILE")
+        argv = compose(cfg) + ["logs", "--no-color", "--tail", str(LOG_LINES), source]
+    elif source == "guard":
+        if not cfg["GUARD_UNIT"]:
+            return not_configured("GUARD_UNIT")
+        argv = [BIN["journalctl"], "-u", cfg["GUARD_UNIT"], "-n", str(LOG_LINES), "-o", "cat", "--no-pager"]
+    else:
+        return err("invalid", "unknown log source")
+    rc, out = run_fixed(argv, 20)
+    if rc is None:
+        return err("timeout", "log read timed out")
+    if rc != 0:
+        return err("failed", "log read failed")
+    return {"ok": True, "lines": sanitize(out)}
+
+
+def op_backup_start(_: dict, cfg: dict) -> dict:
+    if not cfg["BACKUP_UNIT"]:
+        return not_configured("BACKUP_UNIT")
+    if unit_active(cfg["BACKUP_UNIT"]) in ("active", "activating", "reloading", "deactivating"):
+        return err("busy", "a backup is already running")
+    rc, _ = run_fixed([BIN["systemctl"], "start", "--no-block", cfg["BACKUP_UNIT"]], 30)
+    if rc != 0:
+        return err("failed", "could not start the backup unit")
+    return {"ok": True, "acceptedAt": now()}
+
+
+def unix_iso(value: str) -> str | None:
+    m = re.fullmatch(r"@([0-9]+)", value)
+    if not m or int(m.group(1)) == 0:
+        return None
+    return datetime.datetime.fromtimestamp(int(m.group(1)), datetime.timezone.utc).isoformat(timespec="seconds")
+
+
+def op_backup_status(_: dict, cfg: dict) -> dict:
+    if not cfg["BACKUP_UNIT"]:
+        return not_configured("BACKUP_UNIT")
+    rc, out = run_fixed([BIN["systemctl"], "show", cfg["BACKUP_UNIT"], "--timestamp=unix", "-p",
+                         "ActiveState,Result,ExecMainStartTimestamp,ExecMainExitTimestamp"], 10)
+    if rc != 0:
+        return err("failed", "systemctl show failed")
+    props = dict(line.partition("=")[::2] for line in out.decode("utf-8", "replace").splitlines() if "=" in line)
+    return {
+        "ok": True,
+        "activeState": short(props.get("ActiveState", "unknown"), 40),
+        "result": short(props.get("Result", "unknown"), 40),
+        "startedAt": unix_iso(props.get("ExecMainStartTimestamp", "")),
+        "finishedAt": unix_iso(props.get("ExecMainExitTimestamp", "")),
+    }
+
+
+OPS = {
+    "ping": op_ping,
+    "status": op_status,
+    "allowlist-add": op_allowlist_add,
+    "allowlist-list": op_allowlist_list,
+    "mobileraker-add": op_mobileraker_add,
+    "mobileraker-list": op_mobileraker_list,
+    "restart": op_restart,
+    "logs": op_logs,
+    "backup-start": op_backup_start,
+    "backup-status": op_backup_status,
+}
+
+
+def locked(fn, req: dict, cfg: dict) -> dict:
+    """Mutations: in-process lock plus the host-wide flock, both non-blocking."""
+    if not busy.acquire(blocking=False):
+        return err("busy", "helper is running another operation")
+    try:
+        os.makedirs(os.path.dirname(cfg["LOCK_FILE"]), exist_ok=True)
+        fd = os.open(cfg["LOCK_FILE"], os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+        try:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return err("busy", "another farm operation is running")
+            return fn(req, cfg)
+        finally:
+            os.close(fd)
+    finally:
+        busy.release()
+
+
+def dispatch(req: object, cfg: dict) -> dict:
+    op = req.get("op") if isinstance(req, dict) else None
+    fn = OPS.get(op) if isinstance(op, str) else None
+    if fn is None:
+        return err("invalid", "unknown operation")
+    try:
+        return locked(fn, req, cfg) if op in MUTATIONS else fn(req, cfg)
+    except Invalid as e:
+        return err("invalid", short(e))
+    except Exception as e:  # never leave the client without an answer
+        return err("failed", short(type(e).__name__))
+
+
+# ---------------------------------------------------------------------------
+# Socket plumbing
+# ---------------------------------------------------------------------------
+
+def peer_uid(conn: socket.socket) -> int:
+    return struct.unpack("3i", conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i")))[1]
+
+
+def handle(conn: socket.socket) -> None:
+    with conn:
+        try:
+            cfg = load_config(ENV_FILE)
+            allowed = {0} | ({int(cfg["ALLOWED_UID"])} if cfg["ALLOWED_UID"].isdigit() else set())
+            if peer_uid(conn) not in allowed:
+                resp = err("denied", "peer uid is not allowed")
+            else:
+                conn.settimeout(10)
+                buf = b""
+                while b"\n" not in buf and len(buf) <= MAX_REQUEST:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    buf += chunk
+                resp = dispatch(json.loads(buf.split(b"\n", 1)[0].decode("utf-8")), cfg)
+        except (OSError, ValueError, struct.error) as e:
+            resp = err("invalid", short(type(e).__name__))
+        try:
+            conn.sendall(json.dumps(resp, separators=(",", ":")).encode() + b"\n")
+        except OSError:
+            pass
+
+
+def listener() -> socket.socket:
+    if int(os.environ.get("LISTEN_FDS", "0")) >= 1:
+        return socket.socket(fileno=3)
+    os.makedirs(os.path.dirname(SOCKET_PATH), mode=0o750, exist_ok=True)
+    try:
+        os.unlink(SOCKET_PATH)
+    except FileNotFoundError:
+        pass
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.bind(SOCKET_PATH)
+    os.chmod(SOCKET_PATH, 0o600)
+    s.listen(8)
+    return s
+
+
+def main() -> int:
+    srv = listener()
+    while True:
+        conn, _ = srv.accept()
+        threading.Thread(target=handle, args=(conn,), daemon=True).start()
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(0)

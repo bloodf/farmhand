@@ -1,0 +1,33 @@
+[Unit]
+Description=farmhand print farm control room
+After=network-online.target farmhand-helper.socket
+Wants=network-online.target farmhand-helper.socket
+
+[Service]
+Type=simple
+User=farmhand
+Group=farmhand
+WorkingDirectory=/opt/farmhand
+EnvironmentFile=/etc/farmhand/farmhand.env
+ExecStart=/usr/bin/node /opt/farmhand/apps/server/dist/index.js
+Restart=on-failure
+RestartSec=5
+
+# Root work goes through farmhand-helper over /run/farmhand/helper.sock.
+# Printer discovery runs avahi-browse, which talks to avahi-daemon over the
+# system D-Bus socket (/run/dbus/system_bus_socket): keep AF_UNIX allowed and
+# do not hide /run/dbus.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/farmhand
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+CapabilityBoundingSet=
+LockPersonality=yes
+RestrictRealtime=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

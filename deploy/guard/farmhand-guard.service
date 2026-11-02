@@ -1,0 +1,15 @@
+[Unit]
+Description=farmhand: restrict Spoolman's LAN port to approved printers
+After=network-pre.target
+Before=network.target docker.service
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/libexec/farmhand/farmhand-guard.sh
+ExecReload=/usr/local/libexec/farmhand/farmhand-guard.sh
+ExecStop=-/usr/sbin/nft delete table inet farmhand_guard
+
+[Install]
+WantedBy=multi-user.target
