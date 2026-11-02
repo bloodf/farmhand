@@ -10,6 +10,7 @@ import { sameOrigin } from "./middleware/same-origin.js";
 import { type AppEnv, requireRole, sessionMiddleware } from "./middleware/session.js";
 import { fleetRoutes } from "./routes/fleet.js";
 import { healthRoutes } from "./routes/health.js";
+import { maintenanceRoutes } from "./routes/maintenance.js";
 import { onboardingRoutes } from "./routes/onboarding.js";
 import { operationsRoutes } from "./routes/operations.js";
 import { settingsRoutes } from "./routes/settings.js";
@@ -35,7 +36,8 @@ export function createApp(deps: Deps) {
     .route("/", settingsRoutes(deps))
     .route("/", operationsRoutes(deps))
     .route("/", fleetRoutes(deps))
-    .route("/", onboardingRoutes(deps));
+    .route("/", onboardingRoutes(deps))
+    .route("/", maintenanceRoutes(deps));
 
   app.route("/api", api);
 
