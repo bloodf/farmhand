@@ -40,8 +40,16 @@ describe("forbiddenClass", () => {
     ["240.0.0.1", "reserved"],
     ["255.255.255.255", "reserved"],
     ["169.254.1.1", "link_local"],
+    ["100.96.201.33", "shared"],
+    ["100.127.255.1", "shared"],
+    ["198.18.0.5", "benchmark"],
+    ["192.0.0.9", "reserved"],
   ])("%s is %s", (s, cls) => expect(forbiddenClass(parseIpv4(s) ?? [])).toBe(cls));
-  it("allows ordinary unicast", () => expect(forbiddenClass([10, 0, 0, 5])).toBeNull());
+  it("allows ordinary unicast", () => {
+    expect(forbiddenClass([10, 0, 0, 5])).toBeNull();
+    expect(forbiddenClass([100, 63, 0, 1])).toBeNull();
+    expect(forbiddenClass([192, 0, 1, 1])).toBeNull();
+  });
 });
 
 describe("checkTarget", () => {
@@ -49,7 +57,7 @@ describe("checkTarget", () => {
     expect(checkTarget("10.25.16.50", lan)).toEqual({ ok: true, ip: "10.25.16.50" }));
   it("rejects the host's own address on any interface", () => {
     expect(checkTarget("10.25.16.41", lan)).toEqual({ ok: false, code: "own_address" });
-    expect(checkTarget("100.96.201.33", any)).toEqual({ ok: false, code: "own_address" });
+    expect(checkTarget("192.168.50.2", any)).toEqual({ ok: false, code: "own_address" });
   });
   it("rejects network and broadcast addresses", () => {
     expect(checkTarget("10.25.16.0", lan)).toEqual({ ok: false, code: "network_or_broadcast" });

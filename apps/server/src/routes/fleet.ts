@@ -255,16 +255,42 @@ export const fleetRoutes = (deps: Deps) => {
     .get("/events", requireRole("viewer"), (c) =>
       streamSSE(c, async (stream) => {
         let n = 0;
-        await stream.writeSSE({ data: JSON.stringify(deps.live.snapshot()), event: "farm", id: String(n++) });
-        const unsubscribe = deps.live.subscribe((e) => {
-          void stream.writeSSE({ data: JSON.stringify(e), event: "farm", id: String(n++) });
-        });
-        const ping = setInterval(() => void stream.write(": ping\n\n"), 15_000);
-        stream.onAbort(() => {
+        let writing: Promise<void> = Promise.resolve();
+        let dropped = 0;
+        const done = Promise.withResolvers<void>();
+        // Serialize writes; when the reader cannot keep up, drop frames rather than queue without bound.
+        const send = (data: string, event = "farm") => {
+          if (stream.aborted) return;
+          if (dropped > 0 || writing !== settled) {
+            dropped += 1;
+            return;
+          }
+          writing = stream.writeSSE({ data, event, id: String(n++) }).then(() => {
+            writing = settled;
+            if (dropped > 0) {
+              dropped = 0;
+              send(JSON.stringify(deps.live.snapshot()));
+            }
+          });
+        };
+        const settled = writing;
+        const unsubscribe = deps.live.subscribe((e) => send(JSON.stringify(e)));
+        const ping = setInterval(() => {
+          // A ban or role change must close an open stream, not wait for the next page load.
+          void deps.auth.api.getSession({ headers: c.req.raw.headers }).then((s) => {
+            if (!s || s.user.banned) return cleanup();
+            if (!stream.aborted && writing === settled) void stream.write(": ping\n\n");
+          });
+        }, 15_000);
+        const cleanup = () => {
           unsubscribe();
           clearInterval(ping);
-        });
-        await new Promise<void>((resolve) => stream.onAbort(resolve));
+          done.resolve();
+        };
+        stream.onAbort(cleanup);
+        if (stream.aborted) cleanup();
+        else send(JSON.stringify(deps.live.snapshot()));
+        await done.promise;
       }),
     );
 };

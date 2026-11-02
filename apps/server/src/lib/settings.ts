@@ -16,6 +16,11 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export class SettingsStore {
+  private readonly listeners: ((s: Settings) => void)[] = [];
+  onChange(fn: (s: Settings) => void) {
+    this.listeners.push(fn);
+  }
+
   constructor(
     private readonly db: Db,
     private readonly defaults: Settings = DEFAULT_SETTINGS,
@@ -39,6 +44,8 @@ export class SettingsStore {
           set: { value: sql`excluded.value`, updatedAt: now, updatedBy: by },
         });
     }
-    return this.read();
+    const next = await this.read();
+    for (const l of this.listeners) l(next);
+    return next;
   }
 }

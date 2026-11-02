@@ -86,7 +86,7 @@ export const onboardingRoutes = (deps: Deps) => {
         method: "post",
         path: "/candidates/{host}/{port}/dismiss",
         tags: ["onboarding"],
-        middleware: [requireRole("operator")],
+        middleware: [requireRole("operator"), rateLimit("dismiss", 20, 60_000)],
         request: { params: z.object({ host: z.string(), port: z.coerce.number().int() }) },
         responses: {
           200: json(z.object({ ok: z.literal(true) }), "Hidden until it is seen again after a reset"),
@@ -101,6 +101,10 @@ export const onboardingRoutes = (deps: Deps) => {
           .where(and(eq(candidates.host, host), eq(candidates.port, port)))
           .returning({ host: candidates.host });
         if (!r.length) return c.json({ code: "not_found" as const }, 404);
+        const opId = await deps.operations.open("settings", actor(c), `${host}:${port}`, {
+          event: "dismiss",
+        });
+        await deps.operations.update(opId, { status: "complete" });
         deps.live.emit({ type: "candidates", changedAt: new Date().toISOString() });
         return c.json({ ok: true as const }, 200);
       },

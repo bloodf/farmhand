@@ -13,7 +13,10 @@ const EnvSchema = z.object({
   /** 32+ random bytes. `openssl rand -base64 48`. */
   BETTER_AUTH_SECRET: z.string().min(32),
   /** Development only: lets fixtures on 127.0.0.0/8 count as printers. */
-  FARMHAND_DEV_ALLOW_LOOPBACK: z.coerce.boolean().default(false),
+  FARMHAND_DEV_ALLOW_LOOPBACK: z
+    .enum(["", "0", "1", "false", "true"])
+    .default("")
+    .transform((v) => v === "1" || v === "true"),
   /** Header the reverse proxy sets with the real client address (it must overwrite it). */
   FARMHAND_TRUSTED_IP_HEADER: z.string().default("x-real-ip"),
   /** Path to the web build to serve in production; empty = API only. */
@@ -47,6 +50,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const env = EnvSchema.parse(source);
   if (env.NODE_ENV === "production" && env.FARMHAND_DEV_ALLOW_LOOPBACK) {
     throw new Error("FARMHAND_DEV_ALLOW_LOOPBACK is not allowed in production");
+  }
+  if (env.NODE_ENV === "production" && env.FARMHAND_HELPER === "fake") {
+    throw new Error("FARMHAND_HELPER must point at the helper socket in production");
   }
   return env;
 }

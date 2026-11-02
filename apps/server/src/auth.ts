@@ -32,7 +32,8 @@ export function createAuth(db: Db, env: Env) {
     database: drizzleAdapter(db, { provider: "sqlite", schema }),
     emailAndPassword: { enabled: true, minPasswordLength: 12, autoSignIn: true },
     user: { additionalFields: { locale: { type: "string", defaultValue: "en-US", input: true } } },
-    session: { cookieCache: { enabled: true, maxAge: 60 } },
+    // No cookie cache: a ban or role change must apply on the next request.
+    session: { cookieCache: { enabled: false } },
     advanced: {
       useSecureCookies: env.FARMHAND_PUBLIC_URL.startsWith("https://"),
       // Only a header the reverse proxy overwrites may identify the client; X-Forwarded-For can be forged.

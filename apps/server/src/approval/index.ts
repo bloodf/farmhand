@@ -4,7 +4,7 @@
  * per-step results. Repair re-runs only failed/unknown steps.
  */
 import { randomUUID } from "node:crypto";
-import { STEP_IDS, type Step, type StepId } from "@farmhand/contracts";
+import { checkTarget, nameProblem, STEP_IDS, type Step, type StepId } from "@farmhand/contracts";
 import { eq } from "drizzle-orm";
 import type { FdmMonster } from "../adapters/fdm-monster.js";
 import type { Helper } from "../adapters/helper.js";
@@ -21,6 +21,8 @@ export interface ApprovalDeps {
   fdm: FdmMonster;
   operations: Operations;
   onPrintersChanged: () => Promise<void>;
+  lanIfaces: () => readonly string[];
+  allowLoopback: boolean;
 }
 
 export type Effect = { id: StepId; willDo: "add" | "already" | "unknown"; detail: string };
@@ -106,6 +108,22 @@ export class Approval {
     which: StepId[],
     opId: string,
   ) {
+    // Stored rows may predate the current rules (adopted printers, older versions): re-check before any helper step.
+    const target = checkTarget(input.host, {
+      lan: true,
+      lanIfaces: this.d.lanIfaces(),
+      allowLoopback: this.d.allowLoopback,
+    });
+    const nameBad = nameProblem(input.name);
+    if (!target.ok || nameBad) {
+      const steps: Step[] = STEP_IDS.map((id) => ({
+        id,
+        status: which.includes(id) ? "failed" : "skipped",
+        message: which.includes(id) ? (target.ok ? `name:${nameBad}` : target.code) : "",
+      }));
+      await this.d.operations.update(opId, { status: "failed", steps });
+      return steps;
+    }
     const url = moonrakerHttp(input.host, input.port);
     const runners: Record<
       StepId,

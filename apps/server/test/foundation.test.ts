@@ -120,7 +120,8 @@ describe("confirm tokens", () => {
 
 describe("docs", () => {
   it("serves openapi and gates scalar", async () => {
-    const spec = (await (await h.client().get("/api/openapi.json")).json()) as {
+    expect((await h.client().get("/api/openapi.json")).status).toBe(401);
+    const spec = (await (await h.admin.get("/api/openapi.json")).json()) as {
       paths: Record<string, unknown>;
     };
     expect(Object.keys(spec.paths)).toEqual(

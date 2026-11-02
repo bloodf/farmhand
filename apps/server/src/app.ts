@@ -45,6 +45,7 @@ export function createApp(deps: Deps) {
 
   app.route("/api", api);
 
+  app.use("/api/openapi.json", requireRole("viewer"));
   app.doc31("/api/openapi.json", {
     openapi: "3.1.0",
     info: { title: "farmhand", version: deps.version },

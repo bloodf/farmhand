@@ -3,6 +3,7 @@ import { SettingsPatchSchema } from "@farmhand/contracts";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Deps } from "../deps.js";
 import { clientIp } from "../lib/client-ip.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 import { type AppEnv, requireRole } from "../middleware/session.js";
 
 const SettingsOut = z.object({
@@ -43,7 +44,7 @@ export const settingsRoutes = (deps: Deps) =>
         method: "patch",
         path: "/settings",
         tags: ["settings"],
-        middleware: [requireRole("admin")],
+        middleware: [requireRole("admin"), rateLimit("settings", 10, 60_000)],
         request: { body: { content: { "application/json": { schema: SettingsPatchSchema } } } },
         responses: {
           200: { description: "Updated settings", content: { "application/json": { schema: SettingsOut } } },

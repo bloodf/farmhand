@@ -111,7 +111,7 @@ export class Discovery {
       const targets = dedupe(await sources(lanIfaces)).filter(
         (t) =>
           checkTarget(t.host, {
-            lan: false,
+            lan: true,
             lanIfaces,
             allowLoopback: this.d.env.FARMHAND_DEV_ALLOW_LOOPBACK,
             nets: this.d.nets,

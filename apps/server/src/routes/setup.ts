@@ -2,8 +2,9 @@
 import { SetupSchema } from "@farmhand/contracts";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { APIError } from "better-auth/api";
-import { count } from "drizzle-orm";
-import { user } from "../db/schema.js";
+import { count, eq } from "drizzle-orm";
+import { createMiddleware } from "hono/factory";
+import { settings, user } from "../db/schema.js";
 import type { Deps } from "../deps.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import type { AppEnv } from "../middleware/session.js";
@@ -11,6 +12,22 @@ import type { AppEnv } from "../middleware/session.js";
 export const setupRoutes = (deps: Deps) => {
   const usersExist = async () => ((await deps.db.select({ n: count() }).from(user))[0]?.n ?? 0) > 0;
   const Status = z.object({ needsSetup: z.boolean() });
+  // Runs before the rate limiter so a finished setup is a cheap 410 and never fills the limiter map.
+  const setupGate = createMiddleware<AppEnv>(async (c, next) => {
+    if (await usersExist()) return c.json({ code: "setup_complete" }, 410);
+    await next();
+  });
+  // Exactly one request may create the first admin, even when two arrive together.
+  const claim = async () => {
+    const now = new Date().toISOString();
+    const r = await deps.db
+      .insert(settings)
+      .values({ key: "setupClaimedAt", value: now, updatedAt: now, updatedBy: null })
+      .onConflictDoNothing()
+      .returning({ key: settings.key });
+    return r.length === 1;
+  };
+  const release = () => deps.db.delete(settings).where(eq(settings.key, "setupClaimedAt"));
 
   return new OpenAPIHono<AppEnv>()
     .openapi(
@@ -32,7 +49,7 @@ export const setupRoutes = (deps: Deps) => {
         method: "post",
         path: "/setup",
         tags: ["setup"],
-        middleware: [rateLimit("setup", 5, 60_000)],
+        middleware: [setupGate, rateLimit("setup", 5, 60_000)],
         request: { body: { content: { "application/json": { schema: SetupSchema } } } },
         responses: {
           201: {
@@ -46,7 +63,7 @@ export const setupRoutes = (deps: Deps) => {
         },
       }),
       async (c) => {
-        if (await usersExist()) return c.json({ code: "setup_complete" as const }, 410);
+        if (!(await claim())) return c.json({ code: "setup_complete" as const }, 410);
         const body = c.req.valid("json");
         try {
           // The user.create.before hook re-checks the count and promotes the first account to admin.
@@ -57,6 +74,7 @@ export const setupRoutes = (deps: Deps) => {
           });
           for (const cookie of res.headers.getSetCookie()) c.header("set-cookie", cookie, { append: true });
         } catch (err) {
+          await release();
           if (err instanceof APIError && err.message.includes("setup_complete"))
             return c.json({ code: "setup_complete" as const }, 410);
           throw err;

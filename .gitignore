@@ -11,3 +11,5 @@ playwright-report/
 apps/web/src/routeTree.gen.ts
 *.db
 *.db-*
+apps/server/.farmhand-fake-helper/
+.farmhand-e2e-helper/

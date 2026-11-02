@@ -19,7 +19,14 @@ export function parseIpv4(raw: string): number[] | null {
 const toInt = (p: number[]): number =>
   (((p[0] ?? 0) << 24) | ((p[1] ?? 0) << 16) | ((p[2] ?? 0) << 8) | (p[3] ?? 0)) >>> 0;
 
-export type ForbiddenClass = "unspecified" | "loopback" | "multicast" | "reserved" | "link_local";
+export type ForbiddenClass =
+  | "unspecified"
+  | "loopback"
+  | "multicast"
+  | "reserved"
+  | "link_local"
+  | "shared"
+  | "benchmark";
 
 export function forbiddenClass(parts: number[]): ForbiddenClass | null {
   const [a, b] = parts;
@@ -28,6 +35,9 @@ export function forbiddenClass(parts: number[]): ForbiddenClass | null {
   if (a !== undefined && a >= 224 && a <= 239) return "multicast";
   if (a !== undefined && a >= 240) return "reserved";
   if (a === 169 && b === 254) return "link_local";
+  if (a === 100 && b !== undefined && b >= 64 && b <= 127) return "shared"; // CGNAT / Tailscale, never a LAN printer
+  if (a === 198 && (b === 18 || b === 19)) return "benchmark";
+  if (a === 192 && b === 0 && parts[2] === 0) return "reserved";
   return null;
 }
 

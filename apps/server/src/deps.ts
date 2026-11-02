@@ -76,6 +76,10 @@ export async function createDeps(
   );
   await operations.closeStale();
   const settings = new SettingsStore(db);
+  let cachedIfaces: readonly string[] = (await settings.read()).lanIfaces;
+  settings.onChange((s) => {
+    cachedIfaces = s.lanIfaces;
+  });
   const printstash = new PrintStash({
     url: env.PRINTSTASH_URL,
     user: env.PRINTSTASH_USER,
@@ -93,9 +97,14 @@ export async function createDeps(
     fdm,
     operations,
     onPrintersChanged: () => fleet.reconcileSubscribers(),
+    lanIfaces: () => cachedIfaces,
+    allowLoopback: env.FARMHAND_DEV_ALLOW_LOOPBACK,
   });
   if (opts.jobs) {
-    await adoptFromPrintStash(db, printstash, log);
+    await adoptFromPrintStash(db, printstash, log, {
+      lanIfaces: (await settings.read()).lanIfaces,
+      allowLoopback: env.FARMHAND_DEV_ALLOW_LOOPBACK,
+    });
     await fleet.start();
     discovery.start();
   }
