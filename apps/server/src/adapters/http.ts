@@ -37,7 +37,8 @@ export function classify(err: unknown): string {
   if (err instanceof SyntaxError) return "not_json";
   const name = (err as { name?: string })?.name;
   if (name === "TimeoutError" || name === "AbortError") return "timeout";
-  const code = (err as { cause?: { code?: string } })?.cause?.code ?? (err as { code?: string })?.code;
+  const cause = (err as { cause?: { code?: string; errors?: { code?: string }[] } })?.cause;
+  const code = cause?.code ?? cause?.errors?.[0]?.code ?? (err as { code?: string })?.code;
   if (code === "ECONNREFUSED") return "refused";
   if (code === "ENOTFOUND" || code === "EAI_AGAIN") return "dns";
   if (code === "EHOSTUNREACH" || code === "ENETUNREACH") return "unreachable";

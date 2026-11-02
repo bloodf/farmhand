@@ -1,18 +1,22 @@
 /** In-memory app + cookie jar per test file. */
 import { createApp } from "../src/app.js";
-import { createDeps, type Deps } from "../src/deps.js";
+import { type CreateDepsOptions, createDeps, type Deps } from "../src/deps.js";
 import { type Env, testEnv } from "../src/env.js";
 import { resetRateLimitsForTests } from "../src/middleware/rate-limit.js";
 
 export const ORIGIN = "http://localhost:5173";
 const silent = { info() {}, warn() {}, error() {} };
 
-export async function harness(over: Partial<Env> = {}, opts: { jobs?: boolean } = {}) {
+export async function harness(
+  over: Partial<Env> = {},
+  opts: { jobs?: boolean; discovery?: CreateDepsOptions["discovery"] } = {},
+) {
   resetRateLimitsForTests();
   const deps = await createDeps(testEnv({ FARMHAND_PUBLIC_URL: ORIGIN, ...over }), {
     log: silent,
     version: "test",
     jobs: opts.jobs,
+    discovery: opts.discovery,
   });
   const { app } = createApp(deps);
 

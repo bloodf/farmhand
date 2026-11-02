@@ -1,14 +1,18 @@
 /** Everything a route can reach. Built once at boot, or per test with an in-memory DB. */
 import { FdmMonster } from "./adapters/fdm-monster.js";
+import { createHelper, type Helper } from "./adapters/helper.js";
 import { PrintStash } from "./adapters/printstash.js";
 import { Spoolman } from "./adapters/spoolman.js";
+import { Approval } from "./approval/index.js";
 import { type Auth, createAuth } from "./auth.js";
 import { createDb, type Db } from "./db/client.js";
 import type { Env } from "./env.js";
 import { adoptFromPrintStash } from "./jobs/adopt.js";
+import { Discovery, type DiscoveryDeps } from "./jobs/discovery.js";
 import { Fleet } from "./jobs/fleet.js";
 import { Candidates } from "./lib/candidates.js";
 import { ConfirmTokens } from "./lib/confirm-token.js";
+import { FarmLock } from "./lib/farm-lock.js";
 import { Operations } from "./lib/operations.js";
 import { SettingsStore } from "./lib/settings.js";
 import { LiveStore } from "./live/store.js";
@@ -30,6 +34,10 @@ export interface Deps {
   confirm: ConfirmTokens;
   live: LiveStore;
   fleet: Fleet;
+  discovery: Discovery;
+  approval: Approval;
+  helper: Helper;
+  lock: FarmLock;
   printstash: PrintStash;
   fdm: FdmMonster;
   spoolman: Spoolman;
@@ -48,8 +56,10 @@ export const consoleLog: Log = {
 export interface CreateDepsOptions {
   version?: string;
   log?: Log;
-  /** Start background jobs (subscribers, health, stock). Tests usually leave this off. */
+  /** Start background jobs (subscribers, health, stock, discovery timer). Tests usually leave this off. */
   jobs?: boolean;
+  /** Test seams for discovery sources and host networks. */
+  discovery?: Partial<Pick<DiscoveryDeps, "sources" | "nets">>;
 }
 
 export async function createDeps(
@@ -74,9 +84,20 @@ export async function createDeps(
   const fdm = new FdmMonster({ url: env.FDM_URL, user: env.FDM_USER, password: env.FDM_PASSWORD });
   const spoolman = new Spoolman(env.SPOOLMAN_URL);
   const fleet = new Fleet({ env, db, live, settings, printstash, fdm, spoolman });
+  const helper = createHelper(env.FARMHAND_HELPER, env.FARMHAND_FAKE_HELPER_DIR);
+  const discovery = new Discovery({ env, db, live, settings, log, ...opts.discovery });
+  const approval = new Approval({
+    db,
+    helper,
+    printstash,
+    fdm,
+    operations,
+    onPrintersChanged: () => fleet.reconcileSubscribers(),
+  });
   if (opts.jobs) {
     await adoptFromPrintStash(db, printstash, log);
     await fleet.start();
+    discovery.start();
   }
   return {
     env,
@@ -89,12 +110,17 @@ export async function createDeps(
     confirm: new ConfirmTokens(env.BETTER_AUTH_SECRET),
     live,
     fleet,
+    discovery,
+    approval,
+    helper,
+    lock: new FarmLock(),
     printstash,
     fdm,
     spoolman,
     log,
     close: async () => {
       fleet.stop();
+      discovery.stop();
       client.close();
     },
   };
