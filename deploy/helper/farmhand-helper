@@ -62,7 +62,7 @@ DEFAULTS = {
     "ALLOWED_UID": "",
 }
 
-SERVICES = ("spoolman", "printstash", "fdm-monster", "orcaslicer", "mobileraker")
+SERVICES = ("spoolman", "printstash", "fdm-monster", "orcaslicer", "mainsail", "mobileraker")
 MUTATIONS = {"allowlist-add", "mobileraker-add", "restart", "backup-start"}
 
 MAX_REQUEST = 4096

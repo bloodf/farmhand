@@ -118,6 +118,16 @@ services:
     volumes:
       - ${FARMHAND_DATA_DIR:?set FARMHAND_DATA_DIR in .env}/orcaslicer:/config
 
+  mainsail:
+    <<: *common
+    image: ghcr.io/mainsail-crew/mainsail:v2.19.0@sha256:adcadcdb6f9f6ede1f347ca4ac5f469dcc07f3677d46f8ffcd23696c66681893
+    # Static page: the browser talks to each printer's Moonraker directly, so every
+    # printer needs the farmhand origins in [authorization] cors_domains.
+    ports:
+      - "127.0.0.1:3480:80"
+    volumes:
+      - ${FARMHAND_DATA_DIR:?set FARMHAND_DATA_DIR in .env}/mainsail/config.json:/usr/share/nginx/html/config.json:ro
+
   mobileraker:
     <<: *common
     image: ghcr.io/clon1998/mobileraker_companion@sha256:4aad389e1da183d38e5ebb57fa16a78464e465874788a0deeaf3b8458883d821

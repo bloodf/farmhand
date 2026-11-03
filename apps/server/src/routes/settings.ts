@@ -20,6 +20,7 @@ const IntegrationsOut = z.object({
   fdm: z.object({ url: z.string(), credentials: z.boolean(), publicUrl: z.string().nullable() }),
   spoolman: z.object({ url: z.string(), publicUrl: z.string().nullable() }),
   orcaslicer: z.object({ url: z.string(), publicUrl: z.string().nullable() }),
+  mainsail: z.object({ url: z.string(), publicUrl: z.string().nullable() }),
   homeAssistant: z.object({ configured: z.boolean() }),
 });
 
@@ -105,6 +106,7 @@ export const settingsRoutes = (deps: Deps) =>
             },
             spoolman: { url: e.SPOOLMAN_URL, publicUrl: orNull(e.SPOOLMAN_PUBLIC_URL) },
             orcaslicer: { url: e.ORCASLICER_URL, publicUrl: orNull(e.ORCASLICER_PUBLIC_URL) },
+            mainsail: { url: e.MAINSAIL_URL, publicUrl: orNull(e.MAINSAIL_PUBLIC_URL) },
             homeAssistant: { configured: Boolean(e.HA_URL && e.HA_DISCOVERY_WEBHOOK) },
           },
           200,

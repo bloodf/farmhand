@@ -88,6 +88,7 @@ export class Fleet {
       ["printstash", () => this.d.printstash.health()],
       ["fdm-monster", () => this.d.fdm.health()],
       ["orcaslicer", () => fetchJson(`${e.ORCASLICER_URL}/`, z.unknown(), { headers: { accept: "*/*" } })],
+      ["mainsail", () => fetchJson(`${e.MAINSAIL_URL}/`, z.unknown(), { headers: { accept: "*/*" } })],
     ];
     await Promise.all(
       checks.map(async ([id, fn]) => {
@@ -99,8 +100,12 @@ export class Fleet {
           latencyMs: r.latencyMs,
           error: r.ok ? null : (r.error ?? "unknown"),
         };
-        // OrcaSlicer returns HTML with basic auth; 401 still means the service answers.
-        if (id === "orcaslicer" && !r.ok && (r.error === "http_401" || r.error === "not_json")) {
+        // OrcaSlicer and Mainsail answer with HTML (OrcaSlicer may add basic auth); either means the service is up.
+        if (
+          (id === "orcaslicer" || id === "mainsail") &&
+          !r.ok &&
+          (r.error === "http_401" || r.error === "not_json")
+        ) {
           health.status = "up";
           health.error = null;
         }

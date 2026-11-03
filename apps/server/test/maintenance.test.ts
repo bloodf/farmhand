@@ -23,7 +23,7 @@ beforeEach(() => resetRateLimitsForTests());
 const j = async <T>(r: Response) => (await r.json()) as T;
 
 describe("services", () => {
-  it("lists the five services with state text", async () => {
+  it("lists the six services with state text", async () => {
     const r = await j<{ items: { id: string; state: string }[]; helper: string }>(
       await op.get("/api/services"),
     );
@@ -32,6 +32,7 @@ describe("services", () => {
       "printstash",
       "fdm-monster",
       "orcaslicer",
+      "mainsail",
       "mobileraker",
     ]);
     expect(r.items.find((s) => s.id === "mobileraker")?.state).toBe("exited");

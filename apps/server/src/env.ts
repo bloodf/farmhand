@@ -55,6 +55,8 @@ const EnvSchema = z.object({
   SPOOLMAN_PUBLIC_URL: z.string().default(""),
   ORCASLICER_URL: url.default("http://127.0.0.1:3470"),
   ORCASLICER_PUBLIC_URL: z.string().default(""),
+  MAINSAIL_URL: url.default("http://127.0.0.1:3480"),
+  MAINSAIL_PUBLIC_URL: z.string().default(""),
   HA_URL: z.string().default(""),
   HA_DISCOVERY_WEBHOOK: z.string().default(""),
 });

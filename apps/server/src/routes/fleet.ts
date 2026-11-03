@@ -238,6 +238,7 @@ export const fleetRoutes = (deps: Deps) => {
           spoolman: e.SPOOLMAN_PUBLIC_URL,
           "fdm-monster": e.FDM_PUBLIC_URL,
           orcaslicer: e.ORCASLICER_PUBLIC_URL,
+          mainsail: e.MAINSAIL_PUBLIC_URL,
         };
         return c.json(
           {

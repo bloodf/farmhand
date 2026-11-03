@@ -36,6 +36,7 @@ beforeAll(async () => {
       FDM_PASSWORD: FIXTURE_PASSWORD,
       SPOOLMAN_URL: `http://127.0.0.1:${P.spoolman}`,
       ORCASLICER_URL: "http://127.0.0.1:1",
+      MAINSAIL_URL: "http://127.0.0.1:1",
       FARMHAND_LAN_IP: "10.0.0.2",
       PRINTSTASH_PUBLIC_URL: "https://example.test:3460/",
     },
@@ -98,7 +99,13 @@ describe("adoption and live state", () => {
     expect(ov.stock.knownGrams).toBe(1733);
     expect(ov.stock.lowStock.map((s) => s.id)).toEqual([2]);
     const byId = Object.fromEntries(ov.apps.map((a) => [a.id, a.status]));
-    expect(byId).toMatchObject({ spoolman: "up", printstash: "up", "fdm-monster": "up", orcaslicer: "down" });
+    expect(byId).toMatchObject({
+      spoolman: "up",
+      printstash: "up",
+      "fdm-monster": "up",
+      orcaslicer: "down",
+      mainsail: "down",
+    });
 
     apps.state.spoolmanDown = true;
     await h.deps.fleet.refreshStock();

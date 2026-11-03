@@ -18,6 +18,7 @@ const PUBLIC_URL_VAR: Record<AppId, string> = {
   spoolman: "SPOOLMAN_PUBLIC_URL",
   "fdm-monster": "FDM_PUBLIC_URL",
   orcaslicer: "ORCASLICER_PUBLIC_URL",
+  mainsail: "MAINSAIL_PUBLIC_URL",
 };
 
 export const Route = createFileRoute("/_app/apps")({

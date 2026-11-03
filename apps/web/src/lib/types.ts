@@ -35,6 +35,7 @@ export interface Integrations {
   fdm: { url: string; credentials: boolean; publicUrl: string | null };
   spoolman: { url: string; publicUrl: string | null };
   orcaslicer: { url: string; publicUrl: string | null };
+  mainsail: { url: string; publicUrl: string | null };
   homeAssistant: { configured: boolean };
 }
 

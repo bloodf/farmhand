@@ -1,5 +1,12 @@
 /** The only compose services farmhand may restart or read logs from. */
-export const SERVICE_IDS = ["spoolman", "printstash", "fdm-monster", "orcaslicer", "mobileraker"] as const;
+export const SERVICE_IDS = [
+  "spoolman",
+  "printstash",
+  "fdm-monster",
+  "orcaslicer",
+  "mainsail",
+  "mobileraker",
+] as const;
 export type ServiceId = (typeof SERVICE_IDS)[number];
 
 export const SERVICE_LABELS: Record<ServiceId, string> = {
@@ -7,6 +14,7 @@ export const SERVICE_LABELS: Record<ServiceId, string> = {
   printstash: "PrintStash",
   "fdm-monster": "FDM Monster",
   orcaslicer: "OrcaSlicer",
+  mainsail: "Mainsail",
   mobileraker: "Mobileraker companion",
 };
 
@@ -14,7 +22,7 @@ export const LOG_SOURCES = [...SERVICE_IDS, "guard"] as const;
 export type LogSource = (typeof LOG_SOURCES)[number];
 
 /** Apps with a web UI the operator can open. Mobileraker is a companion with no UI. */
-export const APP_IDS = ["printstash", "spoolman", "fdm-monster", "orcaslicer"] as const;
+export const APP_IDS = ["printstash", "spoolman", "fdm-monster", "orcaslicer", "mainsail"] as const;
 export type AppId = (typeof APP_IDS)[number];
 
 /** Onboarding steps, in the order they run. */

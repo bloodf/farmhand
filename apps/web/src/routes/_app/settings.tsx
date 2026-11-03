@@ -344,6 +344,16 @@ function IntegrationRows({ i }: { i: Integrations }) {
       ),
     },
     {
+      key: "mainsail",
+      label: SERVICE_LABELS.mainsail,
+      detail: i.mainsail.url,
+      status: yes(
+        Boolean(i.mainsail.publicUrl),
+        "settings.integrations.public",
+        "settings.integrations.noPublic",
+      ),
+    },
+    {
       key: "ha",
       label: t("settings.integrations.homeAssistant"),
       status: yes(i.homeAssistant.configured, "settings.integrations.set", "settings.integrations.notSet"),

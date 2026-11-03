@@ -29,7 +29,7 @@ If every machine that can reach farmhand is trusted, `FARMHAND_OPEN_ACCESS=1` re
 
 ## Reference stack
 
-`deploy/compose/docker-compose.yml` runs Spoolman, PrintStash, FDM Monster, OrcaSlicer and the Mobileraker companion with pinned images. Copy it with its `.env.example`, set `FARMHAND_DATA_DIR`, `TZ` and `LAN_IP`, then `docker compose -p farmhand up -d`. Point `COMPOSE_FILE` in `helper.env` at it.
+`deploy/compose/docker-compose.yml` runs Spoolman, PrintStash, FDM Monster, OrcaSlicer, Mainsail and the Mobileraker companion with pinned images. Copy it with its `.env.example`, set `FARMHAND_DATA_DIR`, `TZ` and `LAN_IP`, then `docker compose -p farmhand up -d`. Point `COMPOSE_FILE` in `helper.env` at it.
 
 ## Verify
 
