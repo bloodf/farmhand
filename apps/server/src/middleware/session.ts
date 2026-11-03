@@ -11,9 +11,42 @@ export type AppEnv = {
   };
 };
 
-export const sessionMiddleware = (auth: Auth) =>
+/** The admin every request runs as when FARMHAND_OPEN_ACCESS is on. Never stored. */
+export const openSession = (): Session => {
+  const now = new Date();
+  return {
+    session: {
+      id: "open",
+      token: "",
+      userId: "open",
+      createdAt: now,
+      updatedAt: now,
+      expiresAt: new Date(now.getTime() + 60_000),
+      ipAddress: null,
+      userAgent: null,
+      impersonatedBy: null,
+    },
+    user: {
+      id: "open",
+      name: "Local",
+      email: "",
+      emailVerified: false,
+      image: null,
+      createdAt: now,
+      updatedAt: now,
+      role: "admin",
+      banned: false,
+      banReason: null,
+      banExpires: null,
+      locale: "en-US",
+    },
+  };
+};
+
+export const sessionMiddleware = (auth: Auth, open = false) =>
   createMiddleware<AppEnv>(async (c, next) => {
-    c.set("session", await auth.api.getSession({ headers: c.req.raw.headers }));
+    const s = await auth.api.getSession({ headers: c.req.raw.headers });
+    c.set("session", s ?? (open ? openSession() : null));
     await next();
   });
 

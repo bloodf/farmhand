@@ -1,5 +1,5 @@
 import { LOCALES, type Locale } from "@farmhand/contracts";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useMatches, useNavigate } from "@tanstack/react-router";
 import {
   AppWindowIcon,
@@ -38,6 +38,7 @@ import { Sheet, SheetClose, SheetContent, SheetTitle } from "@/components/ui/she
 import { setLocale } from "@/i18n";
 import { fetchJson } from "@/lib/api";
 import { type LiveStatus, startLive, useLiveStatus } from "@/lib/live";
+import { q } from "@/lib/queries";
 import type { SessionUser } from "@/lib/types";
 import { useErrorText } from "./QueryState";
 import { StatusBadge, type Tone } from "./StatusBadge";
@@ -138,6 +139,7 @@ function UserMenu({ user }: { user: SessionUser }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const errorText = useErrorText();
+  const open = useQuery(q.session).data?.open === true;
 
   const signOut = async () => {
     try {
@@ -164,7 +166,7 @@ function UserMenu({ user }: { user: SessionUser }) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link to="/operations" />}>{t("nav.operations")}</DropdownMenuItem>
-        <DropdownMenuItem onClick={signOut}>{t("user.signOut")}</DropdownMenuItem>
+        {open ? null : <DropdownMenuItem onClick={signOut}>{t("user.signOut")}</DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
   );

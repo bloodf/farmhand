@@ -278,7 +278,7 @@ export const fleetRoutes = (deps: Deps) => {
         const ping = setInterval(() => {
           // A ban or role change must close an open stream, not wait for the next page load.
           void deps.auth.api.getSession({ headers: c.req.raw.headers }).then((s) => {
-            if (!s || s.user.banned) return cleanup();
+            if (!deps.env.FARMHAND_OPEN_ACCESS && (!s || s.user.banned)) return cleanup();
             if (!stream.aborted && writing === settled) void stream.write(": ping\n\n");
           });
         }, 15_000);

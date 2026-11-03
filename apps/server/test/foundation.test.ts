@@ -152,3 +152,25 @@ describe("docs", () => {
     expect((await h.client().get("/api/health", { origin: ORIGIN })).status).toBe(200);
   });
 });
+
+describe("open access", () => {
+  it("treats anonymous requests as admin and hides setup", async () => {
+    const o = await harness({ FARMHAND_OPEN_ACCESS: "1" as never });
+    try {
+      const anon = o.client();
+      expect(await (await anon.get("/api/setup/status")).json()).toEqual({ needsSetup: false });
+      const me = (await (await anon.get("/api/auth/get-session")).json()) as {
+        user: { role: string };
+        open: boolean;
+      };
+      expect(me.user.role).toBe("admin");
+      expect(me.open).toBe(true);
+      expect((await anon.patch("/api/settings", { lowStockGrams: 7 })).status).toBe(200);
+      expect(
+        (await anon.patch("/api/settings", { lowStockGrams: 7 }, { origin: "https://evil.example" })).status,
+      ).toBe(403);
+    } finally {
+      await o.close();
+    }
+  });
+});

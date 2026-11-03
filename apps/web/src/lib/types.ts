@@ -19,7 +19,7 @@ export interface SessionUser {
   role: Role;
   locale: string;
 }
-export type Session = { session: unknown; user: SessionUser } | null;
+export type Session = { session: unknown; user: SessionUser; open?: boolean } | null;
 
 export interface Settings {
   discoveryIntervalMin: number;

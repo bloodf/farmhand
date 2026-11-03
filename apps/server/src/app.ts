@@ -30,8 +30,11 @@ export function createApp(deps: Deps) {
   });
   app.use("*", secureHeaders({ referrerPolicy: "same-origin" }));
   app.use("/api/*", sameOrigin([deps.env.FARMHAND_PUBLIC_URL, ...deps.env.FARMHAND_TRUSTED_ORIGINS]));
-  app.use("/api/*", sessionMiddleware(deps.auth));
+  app.use("/api/*", sessionMiddleware(deps.auth, deps.env.FARMHAND_OPEN_ACCESS));
 
+  // Open access: the UI learns it from `open` and hides sign-out.
+  if (deps.env.FARMHAND_OPEN_ACCESS)
+    app.get("/api/auth/get-session", (c) => c.json({ ...c.get("session"), open: true }));
   app.on(["GET", "POST"], "/api/auth/*", (c) => deps.auth.handler(c.req.raw));
 
   const api = new OpenAPIHono<AppEnv>()

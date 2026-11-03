@@ -2,6 +2,10 @@
 import { z } from "zod";
 
 const url = z.string().url();
+const flag = z
+  .enum(["", "0", "1", "false", "true"])
+  .default("")
+  .transform((v) => v === "1" || v === "true");
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -25,10 +29,9 @@ const EnvSchema = z.object({
   /** 32+ random bytes. `openssl rand -base64 48`. */
   BETTER_AUTH_SECRET: z.string().min(32),
   /** Development only: lets fixtures on 127.0.0.0/8 count as printers. */
-  FARMHAND_DEV_ALLOW_LOOPBACK: z
-    .enum(["", "0", "1", "false", "true"])
-    .default("")
-    .transform((v) => v === "1" || v === "true"),
+  FARMHAND_DEV_ALLOW_LOOPBACK: flag,
+  /** No login: every request acts as an admin. Only when every machine that can reach farmhand is trusted. */
+  FARMHAND_OPEN_ACCESS: flag,
   /** Header the reverse proxy sets with the real client address (it must overwrite it). */
   FARMHAND_TRUSTED_IP_HEADER: z.string().default("x-real-ip"),
   /** Path to the web build to serve in production; empty = API only. */

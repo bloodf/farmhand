@@ -42,7 +42,7 @@ export const setupRoutes = (deps: Deps) => {
           },
         },
       }),
-      async (c) => c.json({ needsSetup: !(await usersExist()) }, 200),
+      async (c) => c.json({ needsSetup: !deps.env.FARMHAND_OPEN_ACCESS && !(await usersExist()) }, 200),
     )
     .openapi(
       createRoute({
