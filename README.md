@@ -4,7 +4,7 @@ Self-hosted control room for a Klipper/Moonraker 3D print farm.
 
 farmhand sits on top of the tools you already run — [PrintStash](https://github.com/xiao-villamor/printstash) for the job queue, [FDM Monster](https://github.com/fdm-monster/fdm-monster) for the fleet grid, [Spoolman](https://github.com/Donkie/Spoolman) for filament, [Mobileraker](https://github.com/Clon1998/mobileraker_companion) for phone notifications, OrcaSlicer in the browser — and gives you the one screen they don't: find a new printer on the network, approve it once, and have it registered everywhere, with live status, diagnostics and maintenance in the same place. No terminal needed after install.
 
-**Status:** early development. Nothing to install yet. Follow the [roadmap](docs/roadmap.md).
+**Status:** 0.1.x, running on one farm. Install from the [releases](https://github.com/bloodf/farmhand/releases) following [docs/install.md](docs/install.md). Roadmap in [docs/roadmap.md](docs/roadmap.md).
 
 ## What it does
 
