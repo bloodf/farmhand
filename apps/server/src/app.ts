@@ -29,7 +29,7 @@ export function createApp(deps: Deps) {
     await next();
   });
   app.use("*", secureHeaders({ referrerPolicy: "same-origin" }));
-  app.use("/api/*", sameOrigin(deps.env.FARMHAND_PUBLIC_URL));
+  app.use("/api/*", sameOrigin([deps.env.FARMHAND_PUBLIC_URL, ...deps.env.FARMHAND_TRUSTED_ORIGINS]));
   app.use("/api/*", sessionMiddleware(deps.auth));
 
   app.on(["GET", "POST"], "/api/auth/*", (c) => deps.auth.handler(c.req.raw));

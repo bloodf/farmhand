@@ -18,6 +18,13 @@ Target: a Linux host (Ubuntu 24.04 or Debian 13 tested) that already runs the pr
 
 The installer never overwrites an existing env file and can be re-run after an upgrade.
 
+## Reaching the UI
+
+farmhand listens on every address in `FARMHAND_HOST` (comma list). Two common setups:
+
+- Behind a reverse proxy or Tailscale: keep `FARMHAND_HOST=127.0.0.1`, set `FARMHAND_PUBLIC_URL` to the https name, and have the proxy set `X-Real-IP`. With Tailscale: `tailscale serve --bg --https=3490 http://127.0.0.1:3490`.
+- Direct LAN access as well: add the LAN address, `FARMHAND_HOST=127.0.0.1,192.168.1.10`, make `FARMHAND_PUBLIC_URL` the plain-http LAN origin (cookies must not get the Secure flag) and list the https name in `FARMHAND_TRUSTED_ORIGINS`. Traffic on the LAN is plain http: only do this on a network you trust.
+
 ## Reference stack
 
 `deploy/compose/docker-compose.yml` runs Spoolman, PrintStash, FDM Monster, OrcaSlicer and the Mobileraker companion with pinned images. Copy it with its `.env.example`, set `FARMHAND_DATA_DIR`, `TZ` and `LAN_IP`, then `docker compose -p farmhand up -d`. Point `COMPOSE_FILE` in `helper.env` at it.

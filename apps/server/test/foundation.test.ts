@@ -5,7 +5,7 @@ import { harness, ORIGIN } from "./harness.js";
 
 let h: Awaited<ReturnType<typeof harness>>;
 beforeAll(async () => {
-  h = await harness();
+  h = await harness({ FARMHAND_TRUSTED_ORIGINS: "https://farm.tail.example" as never });
 });
 afterAll(() => h.close());
 
@@ -50,6 +50,15 @@ describe("auth gates", () => {
       { origin: "https://evil.example" },
     );
     expect(res.status).toBe(403);
+  });
+
+  it("accepts writes from an extra trusted origin", async () => {
+    const res = await h.admin.patch(
+      "/api/settings",
+      { lowStockGrams: 2 },
+      { origin: "https://farm.tail.example" },
+    );
+    expect(res.status).toBe(200);
   });
 
   it("rejects unknown fields and unknown interfaces", async () => {

@@ -28,7 +28,7 @@ export function createAuth(db: Db, env: Env) {
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.FARMHAND_PUBLIC_URL,
     basePath: "/api/auth",
-    trustedOrigins: [env.FARMHAND_PUBLIC_URL],
+    trustedOrigins: [env.FARMHAND_PUBLIC_URL, ...env.FARMHAND_TRUSTED_ORIGINS],
     database: drizzleAdapter(db, { provider: "sqlite", schema }),
     emailAndPassword: { enabled: true, minPasswordLength: 12, autoSignIn: true },
     user: { additionalFields: { locale: { type: "string", defaultValue: "en-US", input: true } } },

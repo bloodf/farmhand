@@ -8,12 +8,12 @@ import { HTTPException } from "hono/http-exception";
 
 const SAFE = new Set(["GET", "HEAD", "OPTIONS"]);
 
-export const sameOrigin = (publicUrl: string) => {
-  const allowed = new URL(publicUrl).origin;
+export const sameOrigin = (publicUrls: readonly string[]) => {
+  const allowed = new Set(publicUrls.map((u) => new URL(u).origin));
   return createMiddleware(async (c, next) => {
     if (!SAFE.has(c.req.method)) {
       const origin = c.req.header("origin");
-      if (origin !== allowed && c.req.header("sec-fetch-site") !== "same-origin") {
+      if (!(origin && allowed.has(origin)) && c.req.header("sec-fetch-site") !== "same-origin") {
         throw new HTTPException(403, { message: "csrf" });
       }
     }

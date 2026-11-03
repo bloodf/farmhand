@@ -6,9 +6,21 @@ const url = z.string().url();
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   FARMHAND_PORT: z.coerce.number().int().min(1).max(65535).default(3490),
+  /** Addresses to listen on, comma separated. */
   FARMHAND_HOST: z.string().default("127.0.0.1"),
   /** Origin the browser uses. Drives CSRF and cookie flags. */
   FARMHAND_PUBLIC_URL: url.default("http://localhost:5173"),
+  /** Extra origins the UI is also served from (comma separated), e.g. a Tailscale name next to the LAN address. */
+  FARMHAND_TRUSTED_ORIGINS: z
+    .string()
+    .default("")
+    .transform((v) =>
+      v
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(url)),
   FARMHAND_DB: z.string().default("./farmhand.db"),
   /** 32+ random bytes. `openssl rand -base64 48`. */
   BETTER_AUTH_SECRET: z.string().min(32),
