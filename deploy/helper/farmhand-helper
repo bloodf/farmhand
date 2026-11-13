@@ -60,6 +60,7 @@ DEFAULTS = {
     "TZ": "UTC",
     "LAN_IFACES": "br0",
     "ALLOWED_UID": "",
+    "BRIDGE_TARGETS": "",
 }
 
 SERVICES = ("spoolman", "printstash", "fdm-monster", "orcaslicer", "mainsail", "mobileraker")
@@ -169,7 +170,24 @@ def host_addrs() -> list[ipaddress.IPv4Interface]:
         raise
 
 
-def check_ip(raw: object, lan: list[str]) -> str:
+def bridge_targets(cfg: dict) -> set[str]:
+    """BRIDGE_TARGETS: comma list of ip:port, canonicalised. A malformed entry fails closed."""
+    out = set()
+    for entry in (e.strip() for e in cfg["BRIDGE_TARGETS"].split(",")):
+        if not entry:
+            continue
+        m = re.fullmatch(r"([0-9]{1,3}(?:\.[0-9]{1,3}){3}):([0-9]{1,5})", entry)
+        try:
+            ip = str(ipaddress.IPv4Address(m.group(1))) if m else ""
+        except ValueError:
+            ip = ""
+        if not ip or ip != m.group(1) or not 1 <= int(m.group(2)) <= 65535:
+            fail("invalid BRIDGE_TARGETS in helper.env")
+        out.add(f"{ip}:{int(m.group(2))}")
+    return out
+
+
+def check_ip(raw: object, lan: list[str], bridge: bool = False) -> str:
     if not isinstance(raw, str) or not re.fullmatch(r"[0-9]{1,3}(\.[0-9]{1,3}){3}", raw):
         fail("not an IPv4 address")
     try:
@@ -180,7 +198,7 @@ def check_ip(raw: object, lan: list[str]) -> str:
             or addr.is_reserved or addr == ipaddress.IPv4Address("255.255.255.255"):
         fail("address class not allowed")
     addrs = host_addrs()
-    if any(i.ip == addr for i in addrs):
+    if not bridge and any(i.ip == addr for i in addrs):
         fail("address belongs to this server")
     if lan:
         nets = []
@@ -329,6 +347,7 @@ def op_allowlist_add(req: dict, cfg: dict) -> dict:
         return not_configured("GUARD_UNIT")
     if not cfg["ALLOW_FILE"]:
         return not_configured("ALLOW_FILE")
+    # No port here: a bridge is this host, and its address never goes into the Spoolman allowlist.
     ip = check_ip(req.get("ip"), lan_ifaces(cfg))
     already = ip in allow_entries(cfg["ALLOW_FILE"])
     if not already:
@@ -355,11 +374,12 @@ def op_mobileraker_add(req: dict, cfg: dict) -> dict:
         return not_configured("MR_CONF")
     if not cfg["COMPOSE_FILE"]:
         return not_configured("COMPOSE_FILE")
-    ip = check_ip(req.get("ip"), lan_ifaces(cfg))
     port = req.get("port")
     if not isinstance(port, int) or isinstance(port, bool):
         fail("port must be an integer 1-65535")
     port = check_port(str(port))
+    raw_ip = req.get("ip")
+    ip = check_ip(raw_ip, lan_ifaces(cfg), bridge=f"{raw_ip}:{port}" in bridge_targets(cfg))
     name = check_name(req.get("name"))
     uri = f"moonraker_uri: ws://{ip}:{port}/websocket"
     path = pathlib.Path(cfg["MR_CONF"])

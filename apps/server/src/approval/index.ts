@@ -23,6 +23,8 @@ export interface ApprovalDeps {
   onPrintersChanged: () => Promise<void>;
   lanIfaces: () => readonly string[];
   allowLoopback: boolean;
+  /** `ip:port` bridges on this host: they pass own_address and never go into the Spoolman allowlist. */
+  bridgeTargets: readonly string[];
 }
 
 export type Effect = { id: StepId; willDo: "add" | "already" | "unknown"; detail: string };
@@ -32,6 +34,7 @@ export class Approval {
 
   /** What approving host:port would change right now. */
   async preview(host: string, port: number) {
+    const bridge = this.d.bridgeTargets.includes(`${host}:${port}`);
     const probe = await probeMoonraker(host, port);
     if (!probe.ok) return { ok: false as const, code: "not_moonraker" as const, error: probe.error };
     const url = moonrakerHttp(host, port);
@@ -46,8 +49,9 @@ export class Approval {
       r.ok
         ? { id, willDo: present ? "already" : "add", detail: present ? "present" : "missing" }
         : { id, willDo: "unknown", detail: r.error ?? r.code ?? "unavailable" };
+    // A bridge is this host itself: its address must never go into printers.allow, so the step is left out.
     const effects: Effect[] = [
-      eff("allowlist", allow, allow.ok && allow.ips.includes(host)),
+      ...(bridge ? [] : [eff("allowlist", allow, allow.ok && allow.ips.includes(host))]),
       eff("printstash", ps, ps.ok && ps.urls.has(url)),
       eff("fdm", fdm, fdm.ok && fdm.urls.has(url)),
       eff("mobileraker", mr, mr.ok && mr.uris.includes(wsUri)),
@@ -113,6 +117,8 @@ export class Approval {
       lan: true,
       lanIfaces: this.d.lanIfaces(),
       allowLoopback: this.d.allowLoopback,
+      port: input.port,
+      bridgeTargets: this.d.bridgeTargets,
     });
     const nameBad = nameProblem(input.name);
     if (!target.ok || nameBad) {
@@ -147,6 +153,12 @@ export class Approval {
     }));
     for (const id of which) {
       let step: Step;
+      if (id === "allowlist" && target.bridge) {
+        step = { id, status: "skipped", message: "bridge" };
+        steps.push(step);
+        await this.persistStep(printerId, step);
+        continue;
+      }
       try {
         const r = await runners[id]();
         step = r.ok

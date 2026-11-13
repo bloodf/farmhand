@@ -16,9 +16,9 @@ export async function adoptFromPrintStash(
   db: Db,
   printstash: PrintStash,
   log: Log,
-  opts: { lanIfaces: readonly string[]; allowLoopback: boolean },
+  opts: { lanIfaces: readonly string[]; allowLoopback: boolean; bridgeTargets: readonly string[] },
 ): Promise<number> {
-  const { lanIfaces, allowLoopback } = opts;
+  const { lanIfaces, allowLoopback, bridgeTargets } = opts;
   const existing = (await db.select({ n: count() }).from(printers))[0]?.n ?? 0;
   if (existing > 0 || !printstash.configured) return 0;
   const reg = await printstash.registered();
@@ -37,7 +37,7 @@ export async function adoptFromPrintStash(
     if (u.protocol !== "http:" || !u.hostname) continue;
     // PrintStash data is not trusted: only plain LAN IPv4 targets with a sane name are adopted.
     const port = Number(u.port || 7125);
-    const target = checkTarget(u.hostname, { lan: true, lanIfaces, allowLoopback });
+    const target = checkTarget(u.hostname, { lan: true, lanIfaces, allowLoopback, port, bridgeTargets });
     if (!target.ok || !isValidPort(port) || nameProblem(name)) {
       log.warn(
         { host: u.hostname.slice(0, 80), reason: target.ok ? "name_or_port" : target.code },

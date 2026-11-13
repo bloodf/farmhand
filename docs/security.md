@@ -18,7 +18,7 @@ Every mutation passes, in order: schema validation (zod, strict objects), sessio
 
 ## Printer targets
 
-`checkTarget` accepts plain IPv4 only. It rejects loopback, unspecified, multicast, reserved, broadcast, link-local, any address this host owns, and anything outside the networks of the configured LAN interfaces. The server checks before calling the helper; the helper checks again. `FARMHAND_DEV_ALLOW_LOOPBACK=1` relaxes only the loopback rule and the server refuses to start with it in production.
+`checkTarget` accepts plain IPv4 only. It rejects loopback, unspecified, multicast, reserved, broadcast, link-local, any address this host owns, and anything outside the networks of the configured LAN interfaces. The server checks before calling the helper; the helper checks again. `FARMHAND_DEV_ALLOW_LOOPBACK=1` relaxes only the loopback rule and the server refuses to start with it in production. `FARMHAND_BRIDGE_TARGETS` (helper: `BRIDGE_TARGETS`) lists `ip:port` pairs of Moonraker bridges on this host; an exact match lifts only the own-address rule, and a bridge never enters the Spoolman allowlist.
 
 ## Secrets
 

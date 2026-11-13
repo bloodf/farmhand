@@ -75,7 +75,8 @@ export type TargetRejection =
   | "outside_lan"
   | "network_or_broadcast";
 
-export type TargetCheck = { ok: true; ip: string } | { ok: false; code: TargetRejection };
+/** `bridge` is set when the target matches a listed bridge `ip:port` on this host. */
+export type TargetCheck = { ok: true; ip: string; bridge?: true } | { ok: false; code: TargetRejection };
 
 export interface TargetOptions {
   /** Require the address to sit inside a network attached to one of `lanIfaces`. */
@@ -85,17 +86,27 @@ export interface TargetOptions {
   allowLoopback?: boolean;
   /** Test seam; defaults to this host's interfaces. */
   nets?: readonly Ipv4Net[];
+  /** Port of the target; needed to match `bridgeTargets`. */
+  port?: number;
+  /**
+   * `ip:port` pairs of Moonraker bridges running on this host (FARMHAND_BRIDGE_TARGETS).
+   * An exact ip:port match lifts only the own_address rule.
+   */
+  bridgeTargets?: readonly string[];
 }
 
 export function checkTarget(raw: string, opts: TargetOptions): TargetCheck {
   const parts = parseIpv4(raw);
   if (!parts) return { ok: false, code: "invalid_ipv4" };
+  const ip = parts.join(".");
+  const bridge = opts.port !== undefined && !!opts.bridgeTargets?.includes(`${ip}:${opts.port}`);
+  const pass: TargetCheck = bridge ? { ok: true, ip, bridge: true } : { ok: true, ip };
   const bad = forbiddenClass(parts);
-  if (bad === "loopback" && opts.allowLoopback) return { ok: true, ip: parts.join(".") };
+  if (bad === "loopback" && opts.allowLoopback) return pass;
   if (bad) return { ok: false, code: bad };
   const addr = toInt(parts);
   const nets = opts.nets ?? hostNets();
-  if (nets.some((n) => n.address === addr)) return { ok: false, code: "own_address" };
+  if (!bridge && nets.some((n) => n.address === addr)) return { ok: false, code: "own_address" };
   if (opts.lan) {
     const net = nets.filter((n) => opts.lanIfaces.includes(n.iface)).find((n) => inNet(addr, n));
     if (!net) return { ok: false, code: "outside_lan" };
@@ -106,7 +117,7 @@ export function checkTarget(raw: string, opts: TargetOptions): TargetCheck {
       if (offset === 0 || offset === size - 1) return { ok: false, code: "network_or_broadcast" };
     }
   }
-  return { ok: true, ip: parts.join(".") };
+  return pass;
 }
 
 export const PORT_MIN = 1;
@@ -114,3 +125,19 @@ export const PORT_MAX = 65535;
 export const DEFAULT_MOONRAKER_PORT = 7125;
 
 export const isValidPort = (n: number): boolean => Number.isInteger(n) && n >= PORT_MIN && n <= PORT_MAX;
+
+/** Parses a comma list of `ip:port` into canonical entries; null when any entry is malformed. */
+export function parseBridgeTargets(raw: string): string[] | null {
+  const out: string[] = [];
+  for (const entry of raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)) {
+    const m = /^([^:]+):(\d{1,5})$/.exec(entry);
+    const parts = m?.[1] ? parseIpv4(m[1]) : null;
+    const port = Number(m?.[2]);
+    if (!parts || !isValidPort(port)) return null;
+    out.push(`${parts.join(".")}:${port}`);
+  }
+  return out;
+}

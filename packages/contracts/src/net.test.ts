@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { nameProblem } from "./names.js";
-import { checkTarget, forbiddenClass, type Ipv4Net, parseIpv4 } from "./net.js";
+import { checkTarget, forbiddenClass, type Ipv4Net, parseBridgeTargets, parseIpv4 } from "./net.js";
 
 // 10.25.16.0/24 on br0 (host is .41), 192.168.50.0/24 on eth1, tailscale /32 on ts0
 const ip = (s: string) => {
@@ -80,6 +80,44 @@ describe("checkTarget", () => {
     }));
   it("rejects junk", () =>
     expect(checkTarget("printer.local", lan)).toEqual({ ok: false, code: "invalid_ipv4" }));
+});
+
+describe("checkTarget with bridge targets", () => {
+  const bridged = { ...lan, bridgeTargets: ["10.25.16.41:7125", "127.0.0.1:7125"] };
+  it("lets a listed ip:port on this host through", () =>
+    expect(checkTarget("10.25.16.41", { ...bridged, port: 7125 })).toEqual({
+      ok: true,
+      ip: "10.25.16.41",
+      bridge: true,
+    }));
+  it("needs the port to match", () => {
+    expect(checkTarget("10.25.16.41", { ...bridged, port: 7126 })).toEqual({
+      ok: false,
+      code: "own_address",
+    });
+    expect(checkTarget("10.25.16.41", bridged)).toEqual({ ok: false, code: "own_address" });
+  });
+  it("still refuses loopback", () =>
+    expect(checkTarget("127.0.0.1", { ...bridged, port: 7125 })).toEqual({ ok: false, code: "loopback" }));
+  it("still applies the LAN rule", () =>
+    expect(checkTarget("192.168.50.2", { ...lan, port: 7125, bridgeTargets: ["192.168.50.2:7125"] })).toEqual(
+      { ok: false, code: "outside_lan" },
+    ));
+  it("does not mark ordinary printers", () =>
+    expect(checkTarget("10.25.16.50", { ...bridged, port: 7125 })).toEqual({ ok: true, ip: "10.25.16.50" }));
+});
+
+describe("parseBridgeTargets", () => {
+  it("parses a comma list", () =>
+    expect(parseBridgeTargets(" 10.25.16.41:7125, 10.25.16.41:7126 ,")).toEqual([
+      "10.25.16.41:7125",
+      "10.25.16.41:7126",
+    ]));
+  it("accepts empty", () => expect(parseBridgeTargets("")).toEqual([]));
+  it.each(["10.25.16.41", "10.25.16.41:0", "10.25.16.41:65536", "host:7125", "010.1.1.1:7125", "1.2.3.4:x"])(
+    "rejects %s",
+    (s) => expect(parseBridgeTargets(s)).toBeNull(),
+  );
 });
 
 describe("nameProblem", () => {

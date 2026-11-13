@@ -57,11 +57,13 @@ export const onboardingRoutes = (deps: Deps) => {
       ip: clientIp((n) => c.req.header(n), deps.env.FARMHAND_TRUSTED_IP_HEADER),
     };
   };
-  const lanCheck = async (ip: string) =>
+  const lanCheck = async (ip: string, port: number) =>
     checkTarget(ip, {
       lan: true,
       lanIfaces: (await deps.settings.read()).lanIfaces,
       allowLoopback: deps.env.FARMHAND_DEV_ALLOW_LOOPBACK,
+      port,
+      bridgeTargets: deps.env.FARMHAND_BRIDGE_TARGETS,
     });
 
   return new OpenAPIHono<AppEnv>()
@@ -149,7 +151,7 @@ export const onboardingRoutes = (deps: Deps) => {
       }),
       async (c) => {
         const { ip, port } = c.req.valid("json");
-        const t = await lanCheck(ip);
+        const t = await lanCheck(ip, port);
         if (!t.ok) return c.json({ code: "rejected" as const, reason: t.code }, 422);
         const probe = await probeMoonraker(ip, port);
         if (!probe.ok) return c.json({ code: "rejected" as const, reason: probe.error }, 422);
@@ -190,7 +192,7 @@ export const onboardingRoutes = (deps: Deps) => {
       }),
       async (c) => {
         const body = c.req.valid("json");
-        const t = await lanCheck(body.ip);
+        const t = await lanCheck(body.ip, body.port);
         if (!t.ok) return c.json({ code: "rejected" as const, reason: t.code }, 422);
         const p = await deps.approval.preview(body.ip, body.port);
         if (!p.ok) return c.json({ code: "rejected" as const, reason: p.error }, 422);

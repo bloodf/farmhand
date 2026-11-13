@@ -115,6 +115,8 @@ export class Discovery {
             lanIfaces,
             allowLoopback: this.d.env.FARMHAND_DEV_ALLOW_LOOPBACK,
             nets: this.d.nets,
+            port: t.port,
+            bridgeTargets: this.d.env.FARMHAND_BRIDGE_TARGETS,
           }).ok,
       );
       const found = await mapLimit(targets, PROBE_CONCURRENCY, async (t) => {
