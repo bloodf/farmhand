@@ -99,11 +99,13 @@ export async function createDeps(
     onPrintersChanged: () => fleet.reconcileSubscribers(),
     lanIfaces: () => cachedIfaces,
     allowLoopback: env.FARMHAND_DEV_ALLOW_LOOPBACK,
+    bridgeTargets: env.FARMHAND_BRIDGE_TARGETS,
   });
   if (opts.jobs) {
     await adoptFromPrintStash(db, printstash, log, {
       lanIfaces: (await settings.read()).lanIfaces,
       allowLoopback: env.FARMHAND_DEV_ALLOW_LOOPBACK,
+      bridgeTargets: env.FARMHAND_BRIDGE_TARGETS,
     });
     await fleet.start();
     discovery.start();

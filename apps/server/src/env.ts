@@ -1,4 +1,5 @@
 /** Single source of configuration. Parsed once at boot; anything missing fails fast. */
+import { parseBridgeTargets } from "@farmhand/contracts";
 import { z } from "zod";
 
 const url = z.string().url();
@@ -30,6 +31,15 @@ const EnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   /** Development only: lets fixtures on 127.0.0.0/8 count as printers. */
   FARMHAND_DEV_ALLOW_LOOPBACK: flag,
+  /** Moonraker bridges on this host, `ip:port` comma list. Only an exact match may use this host's own address. */
+  FARMHAND_BRIDGE_TARGETS: z
+    .string()
+    .default("")
+    .transform((v, ctx) => {
+      const list = parseBridgeTargets(v);
+      if (!list) ctx.addIssue({ code: "custom", message: "expected a comma list of ipv4:port" });
+      return list ?? [];
+    }),
   /** No login: every request acts as an admin. Only when every machine that can reach farmhand is trusted. */
   FARMHAND_OPEN_ACCESS: flag,
   /** Header the reverse proxy sets with the real client address (it must overwrite it). */

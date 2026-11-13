@@ -216,6 +216,28 @@ class HelperTest(unittest.TestCase):
                 self.assertEqual(self.call(op="mobileraker-add", **req)["code"], "invalid")
         self.assertFalse(self.mr.exists())
 
+    def test_mobileraker_bridge_target(self):
+        self.write_env(BRIDGE_TARGETS="10.77.88.1:7125")
+        r = self.call(op="mobileraker-add", ip="10.77.88.1", port=7125, name="Kobra X")
+        self.assertEqual(r, {"ok": True, "already": False})
+        self.assertIn("moonraker_uri: ws://10.77.88.1:7125/websocket\n", self.mr.read_text())
+        r = self.call(op="mobileraker-add", ip="10.77.88.1", port=7126, name="Other")
+        self.assertIn("belongs to this server", r["message"])
+        r = self.call(op="allowlist-add", ip="10.77.88.1")
+        self.assertIn("belongs to this server", r["message"])
+        self.assertFalse(self.allow.exists())
+
+    def test_bridge_targets_loopback_and_malformed(self):
+        self.write_env(BRIDGE_TARGETS="127.0.0.1:7125")
+        r = self.call(op="mobileraker-add", ip="127.0.0.1", port=7125, name="Kobra X")
+        self.assertIn("class not allowed", r["message"])
+        for bad in ("10.77.88.1", "10.77.88.1:0", "010.77.88.1:7125", "host:7125"):
+            with self.subTest(bad=bad):
+                self.write_env(BRIDGE_TARGETS=bad)
+                r = self.call(op="mobileraker-add", ip="10.77.88.20", port=7125, name="x")
+                self.assertIn("BRIDGE_TARGETS", r["message"])
+        self.assertFalse(self.mr.exists())
+
     # --- restart ----------------------------------------------------------
 
     def test_restart_ready(self):
