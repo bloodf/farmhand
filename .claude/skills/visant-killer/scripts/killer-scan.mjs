@@ -1345,7 +1345,7 @@ function runSelfTest() {
        waive another. The `brand-marks` pair proves the brand-mark exemption. */
     const sujos = [
       'token-fallback-dirty.tsx', 'token-fallback-dirty.css', 'token-fallback-ids.tsx',
-      'token-layer/brand-marks/components/icons/brand.tsx', 'token-layer/brand-marks/components/home/gauge.tsx',
+      'token-layer/brand-marks/components/icons/brand.tsx', 'token-layer/brand-marks/components/example/user',
     ].map(fx);
     const limpos = ['token-fallback-clean.tsx', 'token-fallback-clean.css', 'token-fallback-theme.css'].map(fx);
     for (const f of [...sujos, ...limpos]) if (!existsSync(f)) tokenFalhas.push(`fixture missing: ${f}`);

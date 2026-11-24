@@ -80,7 +80,7 @@ Spoolman has to be reachable from the printers, so it also listens on `LAN_IP:79
 
 A printer without Moonraker (an Anycubic Kobra X, for example) can be added through a bridge that runs on the farmhand host and speaks the Moonraker API, such as Kobralink. Register the bridge by the host's LAN address, not `127.0.0.1`: PrintStash and FDM Monster run in Docker and cannot reach the host's loopback.
 
-1. List the bridge as `ip:port` in both env files, for example `10.25.16.41:7125`:
+1. List the bridge as `ip:port` in both env files, for example `192.0.2.41:7125`:
    - `FARMHAND_BRIDGE_TARGETS` in `/etc/farmhand/farmhand.env` (comma list; the server refuses to start on a malformed entry).
    - `BRIDGE_TARGETS` in `/etc/farmhand/helper.env` (same value).
 2. Restart farmhand: `sudo systemctl restart farmhand`. The helper reads its env on each request.
@@ -88,7 +88,7 @@ A printer without Moonraker (an Anycubic Kobra X, for example) can be added thro
 
 Only an exact `ip:port` match may use the host's own address. A different port on the same address is still refused, and every other rule still applies (loopback stays development-only). The Spoolman allowlist step shows as skipped for a bridge, because the host's own address must never go into `printers.allow`. PrintStash, FDM Monster and Mobileraker are set up as usual.
 
-Check: `curl -s http://10.25.16.41:7125/server/info` answers with JSON, and the approval checklist shows the allowlist step as skipped.
+Check: `curl -s http://192.0.2.41:7125/server/info` answers with JSON, and the approval checklist shows the allowlist step as skipped.
 
 Secrets live in `/etc/farmhand/farmhand.env` and the compose service env files, never in the database or the repo.
 
