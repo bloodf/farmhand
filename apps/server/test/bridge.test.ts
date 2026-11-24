@@ -73,8 +73,8 @@ describe("FARMHAND_BRIDGE_TARGETS", () => {
       FARMHAND_HELPER: "/run/h.sock",
     };
     expect(() => loadEnv({ ...base, FARMHAND_BRIDGE_TARGETS: "192.0.2.41" })).toThrow();
-    expect(loadEnv({ ...base, FARMHAND_BRIDGE_TARGETS: "192.0.2.41:7125" }).FARMHAND_BRIDGE_TARGETS).toEqual(
-      ["192.0.2.41:7125"],
-    );
+    expect(loadEnv({ ...base, FARMHAND_BRIDGE_TARGETS: "192.0.2.41:7125" }).FARMHAND_BRIDGE_TARGETS).toEqual([
+      "192.0.2.41:7125",
+    ]);
   });
 });
