@@ -25,3 +25,15 @@ Open http://localhost:5173. The first visit asks you to create the admin account
 ## Local note
 
 On a machine where `rtk` wraps shell commands, Biome's node wrapper dies with "Linter process terminated abnormally". Run `rtk bypass pnpm lint` there. CI is unaffected.
+
+## Privacy
+
+Keep the owner's private setup out of source, tests, fixtures, docs, commits,
+branch names, issues, pull requests and comments. Do not include machine names,
+home or worktree paths, private network details, service ports or hostnames,
+thread and task IDs, personal email or provider accounts, quota or credit data,
+device identifiers, Wi-Fi names, or secrets.
+
+Use RFC 5737 addresses such as `192.0.2.10`, example domains, `printer-1`,
+`<serial>`, and `$HOME/...`. Keep hardware findings and redact the identifying
+details. Run `sh scripts/check-privacy.sh` before submitting changes.
